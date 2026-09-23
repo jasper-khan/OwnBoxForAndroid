@@ -445,6 +445,11 @@
             android:configChanges="uiMode"
             android:label="@string/traffic_chart_title"
             android:parentActivityName="io.nekohasekai.sagernet.ui.MainActivity" />
+        <activity
+            android:name="io.nekohasekai.sagernet.ui.ObservabilityActivity"
+            android:configChanges="uiMode"
+            android:label="@string/enable_observability"
+            android:parentActivityName="io.nekohasekai.sagernet.ui.MainActivity" />
 
         <activity
             android:name="io.nekohasekai.sagernet.ui.SwitchActivity"

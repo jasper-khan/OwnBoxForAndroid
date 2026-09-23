@@ -2,6 +2,7 @@ package io.nekohasekai.sagernet.database.preference
 
 import android.graphics.Typeface
 import android.text.InputFilter
+import android.text.InputType
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import androidx.preference.EditTextPreference
@@ -17,6 +18,15 @@ object EditTextPreferenceModifiers {
 
         override fun onBindEditText(editText: EditText) {
             editText.setHorizontallyScrolling(true)
+            editText.setSelection(editText.text.length)
+        }
+    }
+
+    object DnsServers : EditTextPreference.OnBindEditTextListener {
+        override fun onBindEditText(editText: EditText) {
+            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            editText.minLines = 4
+            editText.maxLines = 8
             editText.setSelection(editText.text.length)
         }
     }

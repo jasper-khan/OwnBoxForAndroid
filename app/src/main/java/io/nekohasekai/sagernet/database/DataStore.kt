@@ -119,6 +119,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
 
     var trafficSniffing by configurationStore.stringToInt(Key.TRAFFIC_SNIFFING) { 1 }
     var resolveDestination by configurationStore.boolean(Key.RESOLVE_DESTINATION)
+    var resolveMatchOnly by configurationStore.boolean(Key.RESOLVE_MATCH_ONLY)
 
     var mtu by configurationStore.stringToInt(Key.MTU) { 9000 }
 
@@ -138,6 +139,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var directDns by configurationStore.string(Key.DIRECT_DNS) { "https://223.5.5.5/dns-query" }
     var enableDnsRouting by configurationStore.boolean(Key.ENABLE_DNS_ROUTING) { true }
     var enableFakeDns by configurationStore.boolean(Key.ENABLE_FAKEDNS) { true }
+    var enableObservability by configurationStore.boolean(Key.ENABLE_OBSERVABILITY)
 
     var rulesProvider by configurationStore.stringToInt(Key.RULES_PROVIDER)
     var logLevel by configurationStore.stringToInt(Key.LOG_LEVEL)

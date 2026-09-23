@@ -340,13 +340,15 @@ public class SingBoxOptions {
 
         public String server;
 
+        public List<String> servers;
+
         public Integer server_port;
 
         public String path;
 
         public String detour;
 
-        public String domain_resolver;
+        public DomainResolveOptions domain_resolver;
 
         public String domain_strategy;
 
@@ -386,7 +388,15 @@ public class SingBoxOptions {
 
         public CacheFile cache_file;
 
+        public ObservabilityOptions observability;
+
         public DebugOptions debug;
+
+    }
+
+    public static class ObservabilityOptions extends SingBoxOption {
+
+        public Boolean enabled;
 
     }
 
@@ -4687,6 +4697,8 @@ public class SingBoxOptions {
 
         // sing-box 1.13 resolve 规则动作使用（RouteActionResolve.strategy）
         public String strategy;
+
+        public Boolean match_only;
 
     }
 

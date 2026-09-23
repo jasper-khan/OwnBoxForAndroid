@@ -1,7 +1,7 @@
-# OwnBox v2.8.8-preview 预览版
+# OwnBox v2.8.9-preview 预览版
 
-- **HTTP 代理出站**：改用 sing-box 官方实现，恢复 HTTP/3、CONNECT-UDP 和官方连接管理。
-- **VLESS 与 XHTTP**：恢复官方切网及空闲连接接口，并在切网时重置 XHTTP 连接池。
-- **URLTest**：取消测速时保留已有的节点测速记录。
-- **WebDAV**：测试、备份和恢复仅接受 HTTPS 地址。
-- **内核版本**：继续使用官方 sing-box v1.15.0-alpha.7，保留 OwnBox 的 XHTTP、Juicity 和负载均衡功能。
+- **内核**：切换至 reF1nd/sing-box v1.15.0-alpha.6-reF1nd，并适配 OwnBox 自定义出站和规则集。
+- **DNS**：远程与直连 DNS 均支持每行填写多个服务器，并发查询时使用最先成功的响应。
+- **分流**：增加嗅探后覆盖目标地址、解析仅用于规则匹配的选项。
+- **连接诊断**：可在设置中开启观测，并从“工具 → 网络”查看核心状态、连接和出站流量。
+- **订阅与规则开关**：继续使用 OwnBox 现有实现。

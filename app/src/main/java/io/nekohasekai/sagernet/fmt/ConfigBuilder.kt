@@ -400,8 +400,7 @@ fun buildConfig(
     val dnsHosts by lazy { parseDnsHosts(DataStore.dnsHosts) }
     val enableDnsRouting = DataStore.enableDnsRouting
     val useFakeDns = DataStore.enableFakeDns && !forTest
-    // sing-box 1.13 已移除 sniff_override_destination（sniff 规则动作不再覆盖目标地址），
-    // trafficSniffing 退化为开关语义（>0 即启用）。
+    // reF1nd 核心使用独立规则动作覆盖嗅探到的目标地址。
     val needSniff = DataStore.trafficSniffing > 0
     val externalIndexMap = ArrayList<IndexEntity>()
     // 测速配置必须与正式连接一致（对齐 husi）：沿用用户的 IPv6 模式。
@@ -541,6 +540,14 @@ fun buildConfig(
         domainResolver: String? = null,
         domainStrategy: String? = null
     ): DNSServerOptions {
+        fun resolverForHost(host: String): DomainResolveOptions? =
+            domainResolver?.takeIf { !host.isIpAddress() }?.let { resolver ->
+                DomainResolveOptions().apply {
+                    server = resolver
+                    strategy = domainStrategy
+                }
+            }
+
         val trimmed = address.trim()
         if (trimmed == "local" || trimmed == "hosts") {
             return DNSServerOptions().apply {
@@ -561,10 +568,7 @@ fun buildConfig(
                 this.server_port = port
                 this.path = path
                 this.detour = detour
-                if (!host.isIpAddress()) {
-                    this.domain_resolver = domainResolver
-                    this.domain_strategy = domainStrategy
-                }
+                this.domain_resolver = resolverForHost(host)
             }
         }
         if (trimmed.startsWith("h3://", ignoreCase = true)) {
@@ -579,10 +583,7 @@ fun buildConfig(
                 this.server_port = port
                 this.path = path
                 this.detour = detour
-                if (!host.isIpAddress()) {
-                    this.domain_resolver = domainResolver
-                    this.domain_strategy = domainStrategy
-                }
+                this.domain_resolver = resolverForHost(host)
             }
         }
         if (trimmed.startsWith("tls://", ignoreCase = true)) {
@@ -595,10 +596,7 @@ fun buildConfig(
                 this.server = host
                 this.server_port = port
                 this.detour = detour
-                if (!host.isIpAddress()) {
-                    this.domain_resolver = domainResolver
-                    this.domain_strategy = domainStrategy
-                }
+                this.domain_resolver = resolverForHost(host)
             }
         }
         if (trimmed.startsWith("quic://", ignoreCase = true)) {
@@ -611,10 +609,7 @@ fun buildConfig(
                 this.server = host
                 this.server_port = port
                 this.detour = detour
-                if (!host.isIpAddress()) {
-                    this.domain_resolver = domainResolver
-                    this.domain_strategy = domainStrategy
-                }
+                this.domain_resolver = resolverForHost(host)
             }
         }
         if (trimmed.startsWith("tcp://", ignoreCase = true)) {
@@ -627,10 +622,7 @@ fun buildConfig(
                 this.server = host
                 this.server_port = port
                 this.detour = detour
-                if (!host.isIpAddress()) {
-                    this.domain_resolver = domainResolver
-                    this.domain_strategy = domainStrategy
-                }
+                this.domain_resolver = resolverForHost(host)
             }
         }
         val raw = if (trimmed.startsWith("udp://", ignoreCase = true)) trimmed.removePrefix("udp://") else trimmed
@@ -653,10 +645,7 @@ fun buildConfig(
             this.server = host
             this.server_port = port
             this.detour = detour
-            if (!host.isIpAddress()) {
-                this.domain_resolver = domainResolver
-                this.domain_strategy = domainStrategy
-            }
+            this.domain_resolver = resolverForHost(host)
         }
     }
 
@@ -679,6 +668,9 @@ fun buildConfig(
                     clash_api = ClashAPIOptions().apply {
                         external_controller = "127.0.0.1:9090"
                         external_ui = "../files/yacd"
+                    }
+                    if (DataStore.enableObservability) {
+                        observability = ObservabilityOptions().apply { enabled = true }
                     }
                 }
             }
@@ -1139,7 +1131,6 @@ fun buildConfig(
                     } catch (_: Exception) {
                     }
 
-                    // domain_strategy
                     pastEntity?.requireBean()?.apply {
                         // don't loopback
                         if (defaultServerDomainStrategy != "" && !serverAddress.isIpAddress()) {
@@ -1148,7 +1139,12 @@ fun buildConfig(
                     }
                     // 测速配置必须与正式连接一致（对齐 husi）：沿用统一的服务器
                     // 域名解析策略。曾强制空——测速解析出的 IP/协议族与真实路径不同。
-                    _hack_config_map["domain_strategy"] = defaultServerDomainStrategy
+                    if (defaultServerDomainStrategy.isNotEmpty()) {
+                        _hack_config_map["domain_resolver"] = mapOf(
+                            "server" to "dns-direct",
+                            "strategy" to defaultServerDomainStrategy
+                        )
+                    }
 
                     _hack_config_map["tag"] = tagOut
 
@@ -1542,16 +1538,22 @@ fun buildConfig(
             route.rule_set = route.rule_set.distinctBy { it.tag }
         }
 
+        val directDomainStrategy = when (ipv6Mode) {
+            IPv6Mode.DISABLE -> "ipv4_only"
+            IPv6Mode.ONLY -> "ipv6_only"
+            else -> null
+        }
         for (freedom in arrayOf(TAG_DIRECT, TAG_BYPASS)) {
             outbounds.add(Outbound().apply {
                 tag = freedom
                 type = "direct"
                 // Ensure both direct and bypass outbounds bind to Android default physical network interface
                 _hack_config_map["network_strategy"] = "default"
-                if (ipv6Mode == IPv6Mode.DISABLE) {
-                    _hack_config_map["domain_strategy"] = "ipv4_only"
-                } else if (ipv6Mode == IPv6Mode.ONLY) {
-                    _hack_config_map["domain_strategy"] = "ipv6_only"
+                if (directDomainStrategy != null) {
+                    _hack_config_map["domain_resolver"] = mapOf(
+                        "server" to "dns-direct",
+                        "strategy" to directDomainStrategy
+                    )
                 }
             })
         }
@@ -1597,28 +1599,35 @@ fun buildConfig(
             detour = TAG_DIRECT
         })
 
-        val directAddress = directDNS.firstOrNull()?.takeIf { it.isNotBlank() } ?: "https://223.5.5.5/dns-query"
-        val normalizedDirect = normalizeDnsAddress(directAddress)
-        dns.servers.add(
-            buildDnsServer(
-                address = normalizedDirect,
-                tag = "dns-direct",
-                detour = TAG_DIRECT,
-                domainResolver = "dns-local",
-                domainStrategy = autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-direct"))
-            )
-        )
+        fun addDnsServerGroup(
+            addresses: List<String>, tag: String, fallback: String, detour: String,
+            domainResolver: String, domainStrategy: String?, normalize: (String) -> String
+        ) {
+            val servers = addresses.ifEmpty { listOf(fallback) }.map(normalize).distinct()
+            if (servers.size == 1) {
+                dns.servers.add(buildDnsServer(servers.single(), tag, detour, domainResolver, domainStrategy))
+                return
+            }
+            val memberTags = servers.indices.map { "$tag-${it + 1}" }
+            servers.forEachIndexed { index, address ->
+                dns.servers.add(buildDnsServer(address, memberTags[index], detour, domainResolver, domainStrategy))
+            }
+            dns.servers.add(DNSServerOptions().apply {
+                type = "group"
+                this.tag = tag
+                this.servers = memberTags
+            })
+        }
 
-        val remoteAddress = remoteDns.firstOrNull()?.takeIf { it.isNotBlank() } ?: "https://dns.google/dns-query"
-        val normalizedRemote = normalizeRemoteDnsAddress(remoteAddress)
-        dns.servers.add(
-            buildDnsServer(
-                address = normalizedRemote,
-                tag = "dns-remote",
-                detour = mainProxyTag,
-                domainResolver = "dns-direct",
-                domainStrategy = autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-remote"))
-            )
+        addDnsServerGroup(
+            directDNS, "dns-direct", "https://223.5.5.5/dns-query", TAG_DIRECT,
+            "dns-local", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-direct")),
+            ::normalizeDnsAddress
+        )
+        addDnsServerGroup(
+            remoteDns, "dns-remote", "https://dns.google/dns-query", mainProxyTag,
+            "dns-direct", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-remote")),
+            ::normalizeRemoteDnsAddress
         )
         if (dnsHosts.isNotEmpty()) {
             dns.servers.add(DNSServerOptions().apply {
@@ -1659,11 +1668,6 @@ fun buildConfig(
                     action = "reject"
                 })
             }
-            // avoid loopback: outbound server domains must resolve directly
-            testRules.add(DNSRule_DefaultOptions().apply {
-                outbound = mutableListOf("any")
-                server = "dns-direct"
-            })
             dns.rules = testRules
         } else {
             // built-in DNS rules
@@ -1693,13 +1697,19 @@ fun buildConfig(
                 topRouteRules.add(Rule_DefaultOptions().apply {
                     action = "sniff"
                 })
+                if (DataStore.trafficSniffing == 2) {
+                    topRouteRules.add(Rule_DefaultOptions().apply {
+                        action = "sniff-override-destination"
+                    })
+                }
             }
 
-            // 2. resolve 动作：Fake-IP 模式下填充真实地址池供 IP 规则匹配，强制单栈解析杜绝远端 VPS 双栈泄露
-            if (useFakeDns || DataStore.resolveDestination || ipv6Mode == IPv6Mode.DISABLE || ipv6Mode == IPv6Mode.ONLY) {
+            // 2. resolve 动作：为 IP 规则匹配提供真实地址；match_only 保留域名作为连接目标。
+            if (useFakeDns || DataStore.resolveDestination || DataStore.resolveMatchOnly || ipv6Mode == IPv6Mode.DISABLE || ipv6Mode == IPv6Mode.ONLY) {
                 topRouteRules.add(Rule_DefaultOptions().apply {
                     action = "resolve"
                     strategy = genDomainStrategy(true)
+                    if (DataStore.resolveMatchOnly) match_only = true
                 })
             }
 
@@ -1820,11 +1830,6 @@ fun buildConfig(
                     _hack_config_map["ip_accept_any"] = true
                 })
             }
-            // avoid loopback
-            dns.rules.add(0, DNSRule_DefaultOptions().apply {
-                outbound = mutableListOf("any")
-                server = "dns-direct"
-            })
             // force bypass (always top DNS rule)
             if (domainListDNSDirectForce.isNotEmpty()) {
                 dns.rules.add(0, DNSRule_DefaultOptions().apply {

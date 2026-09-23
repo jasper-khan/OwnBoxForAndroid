@@ -24,6 +24,7 @@ object Key {
     const val DIRECT_DNS = "directDns"
     const val ENABLE_DNS_ROUTING = "enableDnsRouting"
     const val ENABLE_FAKEDNS = "enableFakeDns"
+    const val ENABLE_OBSERVABILITY = "enableObservability"
 
     const val IPV6_MODE = "ipv6Mode"
 
@@ -34,6 +35,7 @@ object Key {
 
     const val TRAFFIC_SNIFFING = "trafficSniffing"
     const val RESOLVE_DESTINATION = "resolveDestination"
+    const val RESOLVE_MATCH_ONLY = "resolveMatchOnly"
 
     const val BYPASS_LAN = "bypassLan"
     const val BYPASS_LAN_IN_CORE = "bypassLanInCore"

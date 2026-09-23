@@ -428,6 +428,7 @@
     <string name="clear_profiles_message">您确定要清空该分组吗\?</string>
     <string name="remote_dns">远程 DNS</string>
     <string name="direct_dns">直连 DNS</string>
+    <string name="dns_servers_dialog_message">每行填写一个 DNS 服务器。填写多个时会并发查询，使用最先成功的响应。</string>
     <string name="server_dns">自定义服务器 DNS</string>
     <string name="server_dns_subscription_sum">仅用于解析此订阅中的服务器域名。留空时使用默认行为。支持 https://、tls://、quic:// 或 host[:port]。</string>
     <string name="server_dns_invalid">自定义服务器 DNS 无效。请使用 https://、tls://、quic:// 或 host[:port]，或留空。</string>
@@ -485,6 +486,8 @@
     <string name="wireguard_psk">节点预共享密钥</string>
     <string name="resolve_destination_summary">如果目标地址是一个域, 则根据 IPv6 策略传出（与 FakeDNS 冲突）</string>
     <string name="resolve_destination">解析目标地址</string>
+    <string name="resolve_match_only">解析仅用于分流</string>
+    <string name="resolve_match_only_summary">解析出的 IP 用于匹配规则，连接目标仍保留域名；开启时优先于“解析目标地址”。</string>
     <string name="destination_override_summary">使用探测的域来覆盖目标地址, 而不是仅用于路由</string>
     <string name="destination_override">覆盖目标地址</string>
     <string name="tun_implementation">TUN 实现</string>
@@ -799,6 +802,19 @@
     <string name="mode_and_inbound_settings">模式与入站设置</string>
     <string name="dns_settings">DNS 设置</string>
     <string name="observatory_settings">连接观测设置 (Observatory)</string>
+    <string name="enable_observability">连接诊断</string>
+    <string name="enable_observability_summary">在内存中保留近期连接；可在“工具→网络”查看。需要启用 Clash API。</string>
+    <string name="connection_diagnostics_summary">查看核心状态、活跃与近期连接，以及各出站流量。</string>
+    <string name="connection_diagnostics_disabled">请先在设置中开启“连接诊断”。</string>
+    <string name="connection_diagnostics_unavailable">本地诊断接口暂不可用，请检查代理连接和 Clash API。</string>
+    <string name="connection_diagnostics_status">核心状态</string>
+    <string name="connection_diagnostics_active">活跃连接</string>
+    <string name="connection_diagnostics_recent">近期连接</string>
+    <string name="connection_diagnostics_top">各出站流量</string>
+    <string name="connection_diagnostics_empty">暂无连接</string>
+    <string name="connection_diagnostics_refresh">刷新</string>
+    <string name="connection_diagnostics_connections">%1$d 个连接</string>
+    <string name="connection_diagnostics_status_format">运行 %1$s · 活跃 %2$d · 近期 %3$d\n累计 %4$d · 上传 %5$s · 下载 %6$s</string>
     <string name="advanced_settings">进阶设置</string>
     <string name="widget_toggle">点击切换连接</string>
     <string name="change_icon">修改应用图标</string>

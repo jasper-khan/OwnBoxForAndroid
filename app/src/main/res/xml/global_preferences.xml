@@ -231,7 +231,7 @@
         <moe.matsuri.nb4a.ui.SimpleMenuPreference
             app:defaultValue="1"
             app:entries="@array/traffic_sniffing_values"
-            app:entryValues="@array/int_array_2"
+            app:entryValues="@array/int_array_3"
             app:icon="@drawable/ic_baseline_manage_search_24"
             app:key="trafficSniffing"
             app:title="@string/traffic_sniffing"
@@ -242,6 +242,11 @@
             app:key="resolveDestination"
             app:summary="@string/resolve_destination_summary"
             app:title="@string/resolve_destination" />
+
+        <SwitchPreference
+            app:key="resolveMatchOnly"
+            app:summary="@string/resolve_match_only_summary"
+            app:title="@string/resolve_match_only" />
 
         <moe.matsuri.nb4a.ui.SimpleMenuPreference
             app:defaultValue="0"
@@ -301,6 +306,7 @@
 
         <EditTextPreference
             app:defaultValue="https://dns.google/dns-query"
+            app:dialogMessage="@string/dns_servers_dialog_message"
             app:icon="@drawable/ic_action_dns"
             app:key="remoteDns"
             app:title="@string/remote_dns"
@@ -316,6 +322,7 @@
 
         <EditTextPreference
             app:defaultValue="https://223.5.5.5/dns-query"
+            app:dialogMessage="@string/dns_servers_dialog_message"
             app:icon="@drawable/ic_action_dns"
             app:key="directDns"
             app:title="@string/direct_dns"
@@ -388,6 +395,11 @@
     <moe.matsuri.nb4a.ui.ExpandablePreferenceCategory
         app:key="categoryObservatory"
         app:title="@string/observatory_settings">
+
+        <SwitchPreference
+            app:key="enableObservability"
+            app:summary="@string/enable_observability_summary"
+            app:title="@string/enable_observability" />
 
         <moe.matsuri.nb4a.ui.UrlTestPreference
             app:defaultValue="@string/default_connection_test_url"

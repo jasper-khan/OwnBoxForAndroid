@@ -9,6 +9,7 @@ import (
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/adapter/inbound"
 	"github.com/sagernet/sing-box/adapter/outbound"
+	"github.com/sagernet/sing-box/adapter/provider"
 	"github.com/sagernet/sing-box/adapter/service"
 	"github.com/sagernet/sing-box/dns"
 	"github.com/sagernet/sing-box/dns/transport"
@@ -64,6 +65,10 @@ func nekoboxAndroidInboundRegistry() *inbound.Registry {
 	mixed.RegisterInbound(registry)
 
 	return registry
+}
+
+func nekoboxAndroidProviderRegistry() *provider.Registry {
+	return provider.NewRegistry()
 }
 
 func nekoboxAndroidOutboundRegistry() *outbound.Registry {
@@ -124,6 +129,7 @@ func nekoboxAndroidDNSTransportRegistry(localTransport LocalDNSTransport) *dns.T
 	transport.RegisterUDP(registry)
 	transport.RegisterTLS(registry)
 	transport.RegisterHTTPS(registry)
+	transport.RegisterGroup(registry)
 	hosts.RegisterTransport(registry)
 	// local.RegisterTransport(registry)
 	fakeip.RegisterTransport(registry)

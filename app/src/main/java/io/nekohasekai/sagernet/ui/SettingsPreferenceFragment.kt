@@ -173,8 +173,12 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
         mixedPort.setOnBindEditTextListener(EditTextPreferenceModifiers.Port)
         httpProxyBypass.setOnBindEditTextListener(EditTextPreferenceModifiers.Hosts)
         dnsHosts.setOnBindEditTextListener(EditTextPreferenceModifiers.Hosts)
+        remoteDns.setOnBindEditTextListener(EditTextPreferenceModifiers.DnsServers)
+        directDns.setOnBindEditTextListener(EditTextPreferenceModifiers.DnsServers)
         httpProxyBypass.summaryProvider = ListSummaryProvider(maxLines = 1)
         dnsHosts.summaryProvider = ListSummaryProvider(maxLines = 1)
+        remoteDns.summaryProvider = ListSummaryProvider(maxLines = 1)
+        directDns.summaryProvider = ListSummaryProvider(maxLines = 1)
 
         speedTestMode.setOnPreferenceChangeListener { _, newValue ->
             SpeedTestSettings.isValidMode(newValue.toString())
@@ -231,11 +235,16 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
 
         val tunImplementation = findPreference<SimpleMenuPreference>(Key.TUN_IMPLEMENTATION)!!
         val resolveDestination = findPreference<SwitchPreference>(Key.RESOLVE_DESTINATION)!!
+        val resolveMatchOnly = findPreference<SwitchPreference>(Key.RESOLVE_MATCH_ONLY)!!
         val acquireWakeLock = findPreference<SwitchPreference>(Key.ACQUIRE_WAKE_LOCK)!!
         val hideFromRecentApps = findPreference<SwitchPreference>(Key.HIDE_FROM_RECENT_APPS)!!
         val enableClashAPI = findPreference<SwitchPreference>(Key.ENABLE_CLASH_API)!!
+        val enableObservability = findPreference<SwitchPreference>(Key.ENABLE_OBSERVABILITY)!!
+        enableObservability.isEnabled = DataStore.enableClashAPI || DataStore.allowAccess
+        enableObservability.onPreferenceChangeListener = reloadListener
         enableClashAPI.setOnPreferenceChangeListener { _, newValue ->
-            (activity as MainActivity?)?.refreshNavMenu(newValue as Boolean)
+            enableObservability.isEnabled = newValue as Boolean || DataStore.allowAccess
+            (activity as MainActivity?)?.refreshNavMenu(newValue)
             needReload()
             true
         }
@@ -329,6 +338,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
         ipv6Mode.onPreferenceChangeListener = reloadListener
 
         resolveDestination.onPreferenceChangeListener = reloadListener
+        resolveMatchOnly.onPreferenceChangeListener = reloadListener
         tunImplementation.onPreferenceChangeListener = reloadListener
         acquireWakeLock.onPreferenceChangeListener = reloadListener
         val performancePriorityMode = findPreference<SwitchPreference>(Key.PERFORMANCE_PRIORITY_MODE)
@@ -413,6 +423,9 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
 
     override fun onResume() {
         super.onResume()
+
+        findPreference<SwitchPreference>(Key.ENABLE_OBSERVABILITY)?.isEnabled =
+            DataStore.enableClashAPI || DataStore.allowAccess
 
         if (::isProxyApps.isInitialized) {
             isProxyApps.isChecked = DataStore.proxyApps

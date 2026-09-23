@@ -11,12 +11,12 @@ require (
 	github.com/miekg/dns v1.1.72
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/sagernet/quic-go v0.61.0-sing-box-mod.7
-	github.com/sagernet/sing v0.9.6-0.20260922013359-4ca3bebe0b8e
+	github.com/sagernet/sing v0.9.5-0.20260917164122-8fc5da509c10
 	// 版本唯一来源是 ../nb4a.properties 的 SINGBOX_VERSION；此处仅为 Go
-	// module graph 所需占位值，实际源码始终由下方 replace 指向 CI 检出的官方 tag。
+	// module graph 所需占位值，实际源码始终由下方 replace 指向 CI 检出的 reF1nd tag。
 	github.com/sagernet/sing-box v0.0.0
 	github.com/sagernet/sing-quic v0.7.1-0.20260904135313-497364e8ee3e
-	github.com/sagernet/sing-tun v0.9.6-0.20260922105247-aff4131a9e9e
+	github.com/sagernet/sing-tun v0.9.4-0.20260917142847-fbc0c3dff312
 	github.com/sagernet/sing-vmess v0.2.8
 	github.com/ulikunitz/xz v0.5.15
 	golang.org/x/crypto v0.54.0 // indirect
@@ -32,7 +32,7 @@ require (
 	github.com/caddyserver/zerossl v0.1.5 // indirect
 	github.com/cretz/bine v0.2.0 // indirect
 	github.com/database64128/netx-go v0.1.1 // indirect
-	github.com/database64128/tfo-go/v2 v2.3.2 // indirect
+	github.com/database64128/tfo-go/v2 v2.3.3 // indirect
 	github.com/florianl/go-nfqueue/v2 v2.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-chi/chi/v5 v5.2.5 // indirect
@@ -70,7 +70,7 @@ require (
 	github.com/sagernet/netlink v0.0.0-20260814022025-64455d367bbf // indirect
 	github.com/sagernet/nftables v0.3.0-mod.4 // indirect
 	github.com/sagernet/sing-anytls v0.0.0-20260904135308-cec2d74334be // indirect
-	github.com/sagernet/sing-mux v0.3.9-0.20260919141002-baf887b90a62 // indirect
+	github.com/sagernet/sing-mux v0.3.7-0.20260905054442-91d1502591ce // indirect
 	github.com/sagernet/sing-shadowsocks v0.2.8 // indirect
 	github.com/sagernet/sing-shadowsocks2 v0.2.1 // indirect
 	github.com/sagernet/sing-shadowtls v0.2.1 // indirect
@@ -98,6 +98,11 @@ require (
 	lukechampine.com/blake3 v1.3.0 // indirect
 )
 
-// 官方内核：构建时由 buildScript/lib/core/get_source.sh 按 nb4a.properties 的
-// SINGBOX_VERSION 克隆并校验 SagerNet/sing-box 到仓库同级目录（../../sing-box）。
-replace github.com/sagernet/sing-box => ../../sing-box
+// 构建时由 buildScript/lib/core/get_source.sh 按 nb4a.properties 的版本
+// 克隆并校验 reF1nd/sing-box 到仓库同级目录。
+replace (
+	github.com/sagernet/sing-anytls => github.com/reF1nd/sing-anytls v0.0.0-20260905062301-7eeaaeb4fb19
+	github.com/sagernet/sing-box => ../../sing-box-ref1nd
+	github.com/sagernet/sing-snell => github.com/reF1nd/sing-snell v0.0.0-20260917160408-d8a791bb5614
+	github.com/sagernet/sing-tun => github.com/reF1nd/sing-tun v0.9.4-0.20260917152937-ed26162d6e17
+)

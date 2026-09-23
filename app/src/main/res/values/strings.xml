@@ -158,6 +158,7 @@
     <string name="cag_dns">DNS Settings</string>
     <string name="remote_dns">Remote DNS</string>
     <string name="direct_dns">Direct DNS</string>
+    <string name="dns_servers_dialog_message">One DNS server per line. Multiple servers are queried together; the first successful response is used.</string>
     <string name="enable_dns_routing">Enable DNS Routing</string>
     <string name="dns_routing_message">Resolve domains in bypass routes with Direct DNS. Be aware of
         potential DNS leaks</string>
@@ -611,6 +612,8 @@
     <string name="destination_override_summary">Use the sniffed domain to overwrite the destination
         address, not just for routing</string>
     <string name="resolve_destination">Resolve Destination</string>
+    <string name="resolve_match_only">Resolve for routing only</string>
+    <string name="resolve_match_only_summary">Use resolved IPs to match rules while keeping the domain as the connection target. Takes precedence over Resolve Destination.</string>
     <string name="resolve_destination_summary">If the destination address is a domain, it is then
         passed out based on the IPv6 strategy (conflicts with FakeDNS)</string>
     <string name="pcap" translatable="false">Pcap</string>
@@ -896,6 +899,19 @@
     <string name="mode_and_inbound_settings">Mode &amp; Inbound Settings</string>
     <string name="dns_settings">DNS Settings</string>
     <string name="observatory_settings">Observatory Settings</string>
+    <string name="enable_observability">Connection diagnostics</string>
+    <string name="enable_observability_summary">Keep recent connections in memory. View them in Tools → Network. Requires Clash API.</string>
+    <string name="connection_diagnostics_summary">Inspect core status, active and recent connections, and traffic by outbound.</string>
+    <string name="connection_diagnostics_disabled">Enable Connection diagnostics in Settings first.</string>
+    <string name="connection_diagnostics_unavailable">The local diagnostics service is unavailable. Check the proxy connection and Clash API.</string>
+    <string name="connection_diagnostics_status">Core status</string>
+    <string name="connection_diagnostics_active">Active connections</string>
+    <string name="connection_diagnostics_recent">Recent connections</string>
+    <string name="connection_diagnostics_top">Traffic by outbound</string>
+    <string name="connection_diagnostics_empty">No connections yet</string>
+    <string name="connection_diagnostics_refresh">Refresh</string>
+    <string name="connection_diagnostics_connections">%1$d connections</string>
+    <string name="connection_diagnostics_status_format">Uptime %1$s · Active %2$d · Recent %3$d\nTotal %4$d · Upload %5$s · Download %6$s</string>
     <string name="advanced_settings">Advanced Settings</string>
     <string name="widget_toggle">Tap to toggle connection</string>
     <string name="change_icon">Change icon</string>

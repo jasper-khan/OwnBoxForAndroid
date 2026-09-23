@@ -31,6 +31,12 @@ class NetworkFragment : NamedFragment(R.layout.layout_network) {
         binding.lanSharingCard.setOnClickListener(openLanSharing)
         binding.lanSharingBtn.setOnClickListener(openLanSharing)
 
+        val openDiagnostics = View.OnClickListener {
+            startActivity(Intent(requireContext(), ObservabilityActivity::class.java))
+        }
+        binding.connectionDiagnosticsCard.setOnClickListener(openDiagnostics)
+        binding.connectionDiagnosticsBtn.setOnClickListener(openDiagnostics)
+
         binding.stunTest.setOnClickListener {
             startActivity(Intent(requireContext(), StunActivity::class.java))
         }

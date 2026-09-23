@@ -2,7 +2,6 @@ package urltest
 
 import (
 	"context"
-	"io"
 	"maps"
 	"net"
 	"sync"
@@ -157,11 +156,6 @@ func (s *URLTest) Selected(network string) adapter.Outbound {
 	return outbound
 }
 
-func (s *URLTest) AttachConnection(closer io.Closer) func() {
-	s.group.Touch()
-	return s.group.interruptGroup.Add(closer, true)
-}
-
 func (s *URLTest) References() []string {
 	return s.tags
 }
@@ -221,7 +215,7 @@ func (s *URLTest) DialContext(ctx context.Context, network string, destination M
 	}
 	conn, err := detour.DialContext(ctx, network, destination)
 	if err == nil {
-		return s.group.interruptGroup.NewConn(conn, interrupt.IsExternalConnectionFromContext(ctx)), nil
+		return s.group.interruptGroup.NewConn(conn, interrupt.IsExternalConnectionFromContext(ctx), interrupt.IsResourceDownloadFromContext(ctx)), nil
 	}
 	s.logger.ErrorContext(ctx, err)
 	// Stability protection: do not delete urltest history on destination dial error
@@ -239,7 +233,7 @@ func (s *URLTest) ListenPacket(ctx context.Context, destination M.Socksaddr) (ne
 	}
 	conn, err := detour.ListenPacket(ctx, destination)
 	if err == nil {
-		return s.group.interruptGroup.NewPacketConn(conn, interrupt.IsExternalConnectionFromContext(ctx)), nil
+		return s.group.interruptGroup.NewPacketConn(conn, interrupt.IsExternalConnectionFromContext(ctx), interrupt.IsResourceDownloadFromContext(ctx)), nil
 	}
 	s.logger.ErrorContext(ctx, err)
 	// Stability protection: do not delete urltest history on destination dial error
@@ -356,14 +350,14 @@ func (g *URLTestGroup) Select(network string) (adapter.Outbound, bool) {
 	switch network {
 	case N.NetworkTCP:
 		if g.selectedOutboundTCP != nil {
-			if history := g.history.LoadURLTestHistory(group.RealTag(g.selectedOutboundTCP, N.NetworkTCP)); history != nil {
+			if history := g.history.LoadURLTestHistory(group.RealTag(g.outbound, g.selectedOutboundTCP)); history != nil {
 				minOutbound = g.selectedOutboundTCP
 				minDelay = history.Delay
 			}
 		}
 	case N.NetworkUDP:
 		if g.selectedOutboundUDP != nil {
-			if history := g.history.LoadURLTestHistory(group.RealTag(g.selectedOutboundUDP, N.NetworkUDP)); history != nil {
+			if history := g.history.LoadURLTestHistory(group.RealTag(g.outbound, g.selectedOutboundUDP)); history != nil {
 				minOutbound = g.selectedOutboundUDP
 				minDelay = history.Delay
 			}
@@ -373,7 +367,7 @@ func (g *URLTestGroup) Select(network string) (adapter.Outbound, bool) {
 		if !common.Contains(detour.Network(), network) {
 			continue
 		}
-		history := g.history.LoadURLTestHistory(group.RealTag(detour, network))
+		history := g.history.LoadURLTestHistory(group.RealTag(g.outbound, detour))
 		if history == nil {
 			continue
 		}
@@ -469,7 +463,7 @@ func URLTestOutbounds(ctx context.Context, outboundManager adapter.OutboundManag
 	testBatch.test(outbounds, link, interval, force)
 	b.Wait()
 	for _, outboundGroup := range testBatch.groups {
-		groupHistory := history.LoadURLTestHistory(group.RealTag(outboundGroup, N.NetworkTCP))
+		groupHistory := history.LoadURLTestHistory(group.RealTag(outboundManager, outboundGroup))
 		if groupHistory != nil {
 			testBatch.result[outboundGroup.Tag()] = groupHistory.Delay
 		}
