@@ -296,6 +296,15 @@ func (c *Client) DialContext(ctx context.Context) (net.Conn, error) {
 	return &conn, nil
 }
 
+func (c *Client) ResetConnections() {
+	if c.xmuxManager != nil {
+		c.xmuxManager.Reset()
+	}
+	if c.xmuxManager2 != nil {
+		c.xmuxManager2.Reset()
+	}
+}
+
 func (c *Client) Close() error {
 	if c.cancel != nil {
 		c.cancel()

@@ -21,7 +21,6 @@ import (
 	"github.com/sagernet/sing-box/protocol/anytls"
 	"github.com/sagernet/sing-box/protocol/block"
 	"github.com/sagernet/sing-box/protocol/direct"
-	protocolDns "github.com/sagernet/sing-box/protocol/dns"
 	"github.com/sagernet/sing-box/protocol/group"
 	"github.com/sagernet/sing-box/protocol/http"
 	"github.com/sagernet/sing-box/protocol/hysteria"
@@ -41,7 +40,6 @@ import (
 	"github.com/sagernet/sing-box/protocol/vmess"
 	"github.com/sagernet/sing-box/protocol/wireguard"
 
-	h2http "libcore/protocol/http"
 	"libcore/protocol/juicity"
 	"libcore/protocol/loadbalance"
 	customUrltest "libcore/protocol/urltest"
@@ -74,7 +72,6 @@ func nekoboxAndroidOutboundRegistry() *outbound.Registry {
 	direct.RegisterOutbound(registry)
 
 	block.RegisterOutbound(registry)
-	protocolDns.RegisterOutbound(registry)
 
 	group.RegisterSelector(registry)
 	group.RegisterURLTest(registry)
@@ -85,9 +82,6 @@ func nekoboxAndroidOutboundRegistry() *outbound.Registry {
 
 	socks.RegisterOutbound(registry)
 	http.RegisterOutbound(registry)
-	// 覆盖 sing-box 的 http outbound：TLS 下默认 ALPN ["h2","http/1.1"]，
-	// 协商到 h2 时走 HTTP/2 CONNECT（兼容 h2-only HTTPS 代理节点）。
-	h2http.RegisterOutbound(registry)
 	shadowsocks.RegisterOutbound(registry)
 	snell.RegisterOutbound(registry)
 	vmess.RegisterOutbound(registry)

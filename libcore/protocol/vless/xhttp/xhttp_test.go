@@ -1,6 +1,7 @@
 package xhttp
 
 import (
+	"context"
 	"io"
 	"testing"
 	"time"
@@ -8,6 +9,29 @@ import (
 	"github.com/sagernet/sing-box/common/tls"
 	Xbadoption "libcore/protocol/vless/internal/xray/badoption"
 )
+
+type resetTestConn struct{ closed bool }
+
+func (c *resetTestConn) IsClosed() bool { return c.closed }
+func (c *resetTestConn) Close() error {
+	c.closed = true
+	return nil
+}
+
+func TestXmuxManagerReset(t *testing.T) {
+	manager := NewXmuxManager(V2RayXHTTPXmuxOptions{}, func() XmuxConn {
+		return &resetTestConn{}
+	})
+	first := manager.GetXmuxClient(context.Background()).XmuxConn
+	manager.Reset()
+	if !first.IsClosed() {
+		t.Fatal("reset did not close the old connection")
+	}
+	second := manager.GetXmuxClient(context.Background()).XmuxConn
+	if second == first || second.IsClosed() {
+		t.Fatal("reset did not create a usable connection")
+	}
+}
 
 type mockTLSConfig struct {
 	tls.Config

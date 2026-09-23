@@ -107,6 +107,17 @@ func (m *XmuxManager) GetXmuxClient(ctx context.Context) *XmuxClient {
 	return xmuxClient
 }
 
+func (m *XmuxManager) Reset() {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
+	for _, client := range m.xmuxClients {
+		if client != nil && client.XmuxConn != nil {
+			_ = client.XmuxConn.Close()
+		}
+	}
+	m.xmuxClients = nil
+}
+
 func (m *XmuxManager) Close() error {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
