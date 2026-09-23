@@ -1,6 +1,7 @@
-# OwnBox v2.8.7-preview 预览版
+# OwnBox v2.8.8-preview 预览版
 
-- **一致性哈希策略**：新增支持一致性哈希（consistentHash）策略组，实现会话保持与平滑故障转移。
-- **页面布局修复**：修复策略组页面底部“添加服务器配置”按钮被系统手势导航栏遮挡的问题。
-- **吞吐量与性能优化**：充分发挥 Sing-box 1.15.0-alpha.7 与 sing-tun 原生协议栈的高性能零拷贝传输。
-- **核心版本稳定**：严格保持 Sing-box 1.15.0-alpha.7 内核，保证既有各项功能平稳运行。
+- **HTTP 代理出站**：改用 sing-box 官方实现，恢复 HTTP/3、CONNECT-UDP 和官方连接管理。
+- **VLESS 与 XHTTP**：恢复官方切网及空闲连接接口，并在切网时重置 XHTTP 连接池。
+- **URLTest**：取消测速时保留已有的节点测速记录。
+- **WebDAV**：测试、备份和恢复仅接受 HTTPS 地址。
+- **内核版本**：继续使用官方 sing-box v1.15.0-alpha.7，保留 OwnBox 的 XHTTP、Juicity 和负载均衡功能。
