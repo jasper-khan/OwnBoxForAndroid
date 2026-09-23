@@ -19,12 +19,10 @@ import kotlinx.coroutines.launch
 import okhttp3.Credentials
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.net.URL
 import com.google.android.material.snackbar.Snackbar
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 class WebDAVSettingsActivity : ThemedActivity() {
     
@@ -80,6 +78,15 @@ class WebDAVSettingsActivity : ThemedActivity() {
                     editText.setSingleLine()
                     editText.setSelection(editText.text.length)
                 }
+                setOnPreferenceChangeListener { _, newValue ->
+                    val server = newValue as String
+                    if (server.isBlank() || server.toSecureWebDAVUrlOrNull() != null) {
+                        true
+                    } else {
+                        Snackbar.make(requireView(), R.string.webdav_https_required, Snackbar.LENGTH_LONG).show()
+                        false
+                    }
+                }
                 summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
             }
             
@@ -127,8 +134,10 @@ class WebDAVSettingsActivity : ThemedActivity() {
                         throw Exception(getString(R.string.webdav_server_empty))
                     }
 
-                    val url = URL(server)
+                    val url = server.toSecureWebDAVUrlOrNull()
+                        ?: throw Exception(getString(R.string.webdav_https_required))
                     val client = OkHttpClient.Builder()
+                        .followSslRedirects(false)
                         .connectTimeout(10, TimeUnit.SECONDS)
                         .readTimeout(10, TimeUnit.SECONDS)
                         .writeTimeout(10, TimeUnit.SECONDS)
@@ -164,10 +173,7 @@ class WebDAVSettingsActivity : ThemedActivity() {
                     // 如果认证成功，再测试目录操作
                     val path = (DataStore.webdavPath ?: "").trim('/')
                     if (path.isNotBlank()) {
-                        val baseHttpUrl = server.toHttpUrlOrNull()
-                            ?: throw Exception(getString(R.string.webdav_server_not_found))
-
-                        val dirUrl = baseHttpUrl.newBuilder().apply {
+                        val dirUrl = url.newBuilder().apply {
                             path.split('/').filter { it.isNotEmpty() }.forEach { segment ->
                                 addPathSegment(segment)
                             }

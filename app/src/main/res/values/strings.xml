@@ -740,6 +740,7 @@
     <string name="backup_webdav">WebDAV Backup</string>
     <string name="webdav_settings">WebDAV Settings</string>
     <string name="webdav_server">Server Address</string>
+    <string name="webdav_https_required">Enter a valid HTTPS WebDAV server address</string>
     <string name="webdav_username">Username</string>
     <string name="webdav_password">Password</string>
     <string name="webdav_path">Backup Path</string>

@@ -47,7 +47,6 @@ import java.util.zip.ZipInputStream
 import java.util.concurrent.TimeUnit
 import java.util.zip.Deflater
 import java.io.BufferedOutputStream
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 class BackupFragment : NamedFragment(R.layout.layout_backup) {
 
@@ -202,7 +201,7 @@ class BackupFragment : NamedFragment(R.layout.layout_backup) {
                 )
                 isWebDAVBackup = false
                 
-                val client = OkHttpClient()
+                val client = OkHttpClient.Builder().followSslRedirects(false).build()
 
                 // 规范化 URL
                 val baseUrl = DataStore.webdavServer!!.trimEnd('/')
@@ -213,14 +212,9 @@ class BackupFragment : NamedFragment(R.layout.layout_backup) {
                 val version = BuildConfig.VERSION_NAME
                 val fileName = "OwnBox_backup_${version}_$timestamp.zip"
 
-                // 确保 baseUrl 是有效的 URL
-                if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
-                    throw Exception("Invalid server URL: must start with http:// or https://")
-                }
-
                 // 使用 HttpUrl 构建路径，避免 # 等特殊字符被当作 fragment
-                val baseHttpUrl = baseUrl.toHttpUrlOrNull()
-                    ?: throw Exception("Invalid server URL: $baseUrl")
+                val baseHttpUrl = baseUrl.toSecureWebDAVUrlOrNull()
+                    ?: throw Exception(app.getString(R.string.webdav_https_required))
 
                 val dirUrl = baseHttpUrl.newBuilder().apply {
                     path.split('/').filter { it.isNotEmpty() }.forEach { segment ->
@@ -340,16 +334,12 @@ class BackupFragment : NamedFragment(R.layout.layout_backup) {
         val activity = requireActivity()
         restoreJob = runOnDefaultDispatcher {
             try {
-                val client = OkHttpClient()
+                val client = OkHttpClient.Builder().followSslRedirects(false).build()
                 val baseUrl = DataStore.webdavServer!!.trimEnd('/')
                 val path = DataStore.webdavPath?.trim('/')?.takeIf { it.isNotEmpty() } ?: "Throne"
 
-                if (!baseUrl.startsWith("http://") && !baseUrl.startsWith("https://")) {
-                    throw Exception("Invalid server URL: must start with http:// or https://")
-                }
-
-                val baseHttpUrl = baseUrl.toHttpUrlOrNull()
-                    ?: throw Exception("Invalid server URL: $baseUrl")
+                val baseHttpUrl = baseUrl.toSecureWebDAVUrlOrNull()
+                    ?: throw Exception(app.getString(R.string.webdav_https_required))
 
                 val dirUrl = baseHttpUrl.newBuilder().apply {
                     path.split('/').filter { it.isNotEmpty() }.forEach { segment ->
