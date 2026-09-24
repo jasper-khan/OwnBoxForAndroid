@@ -1688,14 +1688,21 @@ fun buildConfig(
                     sniffer = listOf("http", "tls", "quic", "stun")
                     timeout = "300ms"
                 })
-                if (DataStore.trafficSniffing == 2) {
-                    topRouteRules.add(Rule_DefaultOptions().apply {
-                        action = "sniff-override-destination"
-                    })
-                }
             }
 
-            // 2. resolve 动作：为 IP 规则匹配提供真实地址；match_only 保留域名作为连接目标。
+            // 2. hijack-dns 拦截入站 DNS 流量进入内置 DNS 引擎
+            topRouteRules.add(Rule_DefaultOptions().apply {
+                protocol = listOf("dns")
+                action = "hijack-dns"
+            })
+
+            if (DataStore.trafficSniffing == 2) {
+                topRouteRules.add(Rule_DefaultOptions().apply {
+                    action = "sniff-override-destination"
+                })
+            }
+
+            // 3. resolve 动作：为 IP 规则匹配提供真实地址；match_only 保留域名作为连接目标。
             if (useFakeDns || DataStore.resolveDestination || DataStore.resolveMatchOnly || ipv6Mode == IPv6Mode.DISABLE || ipv6Mode == IPv6Mode.ONLY) {
                 topRouteRules.add(Rule_DefaultOptions().apply {
                     action = "resolve"
@@ -1703,12 +1710,6 @@ fun buildConfig(
                     if (DataStore.resolveMatchOnly) match_only = true
                 })
             }
-
-            // 3. hijack-dns 拦截入站 DNS 流量进入内置 DNS 引擎
-            topRouteRules.add(Rule_DefaultOptions().apply {
-                protocol = listOf("dns")
-                action = "hijack-dns"
-            })
 
             // 4. IP 版本禁用规则
             if (ipv6Mode == IPv6Mode.DISABLE) {
