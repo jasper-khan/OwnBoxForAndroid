@@ -50,6 +50,7 @@ import moe.matsuri.nb4a.utils.JavaUtil.gson
 import moe.matsuri.nb4a.utils.Util
 import moe.matsuri.nb4a.utils.listByLineOrComma
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import org.json.JSONObject
 
 const val TAG_MIXED = "mixed-in"
 
@@ -377,7 +378,7 @@ fun buildConfig(
     val matchOnlyResolveEnabled = !DataStore.globalMode && extraRules.any { it.isResolveAction(true) }
     val extraProxies =
         if (forTest) mapOf() else SagerDatabase.proxyDao.getEntities(extraRules.mapNotNull { rule ->
-            rule.outbound.takeIf { it > 0 && it != proxy.id }
+            rule.outbound.takeIf { rule.routeAction() == "route" && it > 0 && it != proxy.id }
         }.toHashSet().toList()).associateBy { it.id }
     val buildSelector = !forTest && group?.isSelector == true && !forExport
     val isGroupUrlTest = group?.let { DataStore.isGroupUrlTest(it.id) } == true
@@ -1304,7 +1305,10 @@ fun buildConfig(
         } else {
             // 应用用户规则
             for (rule in extraRules) {
-                val isResolveAction = rule.isResolveAction()
+                val selectedAction = rule.routeAction()
+                val isRouteAction = selectedAction == "route"
+                val customRuleConfig = if (isRouteAction || rule.config.isBlank()) rule.config
+                else JSONObject(rule.config).apply { remove("outbound") }.toString()
                 if (rule.packages.isNotEmpty()) {
                     PackageCache.awaitLoadSync()
                 }
@@ -1356,7 +1360,7 @@ fun buildConfig(
                     }
                 }
 
-                when (rule.outbound) {
+                if (isRouteAction) when (rule.outbound) {
                     -1L -> {
                         if (shouldAddDnsRule) {
                             userDNSRuleList += makeDnsRuleObj().apply { server = "dns-direct" }
@@ -1444,16 +1448,16 @@ fun buildConfig(
                     if (rule.protocol.isNotBlank()) {
                         ruleObj.protocol = rule.protocol.listByLineOrComma()
                     }
-                    if (isResolveAction) {
+                    if (!isRouteAction) {
                         ruleObj.outbound = null
-                        ruleObj.action = "resolve"
+                        ruleObj.action = selectedAction
                     } else if (targetOutbound == TAG_BLOCK) {
                         ruleObj.outbound = null
                         ruleObj.action = "reject"
                     } else {
                         ruleObj.outbound = targetOutbound
                     }
-                    ruleObj._hack_custom_config = rule.config
+                    ruleObj._hack_custom_config = customRuleConfig
                 }
 
                 val generatedSubRules = mutableListOf<Rule_DefaultOptions>()
@@ -1506,7 +1510,7 @@ fun buildConfig(
                 }
 
                 for (subRule in generatedSubRules) {
-                    if (subRule.action != "reject" && subRule.action != "resolve" && subRule.outbound.isNullOrBlank()) {
+                    if (isRouteAction && subRule.action != "reject" && subRule.outbound.isNullOrBlank()) {
                         Toast.makeText(
                             SagerNet.application,
                             "Warning: " + rule.displayName() + ": A non-existent outbound was specified.",
@@ -1725,25 +1729,6 @@ fun buildConfig(
                 })
             }
 
-            // 微信/QQ/腾讯直连保活：避免微信与QQ图片、文件、音视频收发被错误分流或远程双栈丢包
-            topRouteRules.add(Rule_DefaultOptions().apply {
-                domain_suffix = listOf(
-                    "weixin.qq.com",
-                    "wechat.com",
-                    "qpic.cn",
-                    "qlogo.cn",
-                    "wx.gtimg.com",
-                    "gtimg.com",
-                    "gtimg.cn",
-                    "qq.com",
-                    "tencent.com",
-                    "tenpay.com",
-                    "servicewechat.com",
-                    "idqqimg.com"
-                )
-                outbound = TAG_DIRECT
-            })
-
             // 6. 远程 DNS 硬隔离规则（强制锁定 mainProxyTag，绝不回退或走国内直连）
             if (remoteDomains.isNotEmpty()) {
                 topRouteRules.add(Rule_DefaultOptions().apply {
@@ -1796,24 +1781,6 @@ fun buildConfig(
                     server = "dns-direct"
                 })
             }
-            val tencentDirectDomains = listOf(
-                "domain:weixin.qq.com",
-                "domain:wechat.com",
-                "domain:qpic.cn",
-                "domain:qlogo.cn",
-                "domain:wx.gtimg.com",
-                "domain:gtimg.com",
-                "domain:gtimg.cn",
-                "domain:qq.com",
-                "domain:tencent.com",
-                "domain:tenpay.com",
-                "domain:servicewechat.com",
-                "domain:idqqimg.com"
-            )
-            dns.rules.add(0, DNSRule_DefaultOptions().apply {
-                makeSingBoxRule(tencentDirectDomains)
-                server = "dns-direct"
-            })
             perGroupResolver.forEach { (gid, resolver) ->
                 val hosts = perGroupServerHosts[gid]
                     ?.filter { it.isNotBlank() && isExclusiveCustomHost(it) }

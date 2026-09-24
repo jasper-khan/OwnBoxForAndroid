@@ -20,6 +20,7 @@ import io.nekohasekai.sagernet.ktx.int
 import io.nekohasekai.sagernet.ktx.long
 import io.nekohasekai.sagernet.ktx.parsePort
 import io.nekohasekai.sagernet.ktx.string
+import io.nekohasekai.sagernet.ktx.stringSet
 import io.nekohasekai.sagernet.ktx.stringToInt
 import io.nekohasekai.sagernet.ktx.stringToIntIfExists
 import io.nekohasekai.sagernet.ktx.stringToLong
@@ -353,6 +354,17 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var routeSource by profileCacheStore.string(Key.ROUTE_SOURCE)
     var routeProtocol by profileCacheStore.string(Key.ROUTE_PROTOCOL)
     var routeRuleset by profileCacheStore.string(Key.ROUTE_RULESET)
+    var routeAction by profileCacheStore.string(Key.ROUTE_ACTION) { "route" }
+    var routeResolveMatchOnly by profileCacheStore.boolean(Key.ROUTE_RESOLVE_MATCH_ONLY)
+    var routeResolveStrategy by profileCacheStore.string(Key.ROUTE_RESOLVE_STRATEGY)
+    var routeResolveServer by profileCacheStore.string(Key.ROUTE_RESOLVE_SERVER)
+    var routeResolveTimeout by profileCacheStore.string(Key.ROUTE_RESOLVE_TIMEOUT)
+    var routeResolveDisableCache by profileCacheStore.boolean(Key.ROUTE_RESOLVE_DISABLE_CACHE)
+    var routeResolveDisableOptimisticCache by profileCacheStore.boolean(Key.ROUTE_RESOLVE_DISABLE_OPTIMISTIC_CACHE)
+    var routeResolveRewriteTTL by profileCacheStore.string(Key.ROUTE_RESOLVE_REWRITE_TTL)
+    var routeResolveClientSubnet by profileCacheStore.string(Key.ROUTE_RESOLVE_CLIENT_SUBNET)
+    var routeSniffers by profileCacheStore.stringSet(Key.ROUTE_SNIFFERS)
+    var routeSniffTimeout by profileCacheStore.string(Key.ROUTE_SNIFF_TIMEOUT)
     var routeOutbound by profileCacheStore.stringToInt(Key.ROUTE_OUTBOUND)
     var routeOutboundRule by profileCacheStore.long(Key.ROUTE_OUTBOUND + "Long")
     var routePackages by profileCacheStore.string(Key.ROUTE_PACKAGES)

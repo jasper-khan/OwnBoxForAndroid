@@ -1,5 +1,4 @@
-# OwnBox v2.8.13-preview 预览版
+# OwnBox v2.8.14-preview 预览版
 
-- FakeIP DNS 路由改为末尾兜底规则，关闭 IPv6 时仅处理 A，开启后处理 A 和 AAAA。
-- 去除提前生成的重复 FakeIP DNS 规则；返回记录的 TTL 设为 1 秒。
-- 显式关闭 FakeIP 映射持久化。
+- 路由规则可在 GUI 中设置常用动作及解析、嗅探参数；仅选择 route 时显示出站。
+- 移除自动附加的 QQ、微信、腾讯直连及 DNS 规则。

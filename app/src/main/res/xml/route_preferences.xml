@@ -60,6 +60,64 @@
             app:key="routeProtocol"
             app:title="protocol"
             app:useSimpleSummaryProvider="true" />
+        <moe.matsuri.nb4a.ui.SimpleMenuPreference
+            app:entries="@array/route_action_entry"
+            app:entryValues="@array/route_action_value"
+            app:icon="@drawable/ic_baseline_tune_24"
+            app:key="routeAction"
+            app:title="@string/route_action"
+            app:useSimpleSummaryProvider="true" />
+        <SwitchPreference
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeResolveMatchOnly"
+            app:title="@string/resolve_match_only" />
+        <moe.matsuri.nb4a.ui.SimpleMenuPreference
+            app:entries="@array/route_resolve_strategy_entry"
+            app:entryValues="@array/route_resolve_strategy_value"
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeResolveStrategy"
+            app:title="@string/route_resolve_strategy"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeResolveServer"
+            app:title="@string/route_resolve_server"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeResolveTimeout"
+            app:title="@string/route_resolve_timeout"
+            app:useSimpleSummaryProvider="true" />
+        <SwitchPreference
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeResolveDisableCache"
+            app:title="@string/route_resolve_disable_cache" />
+        <SwitchPreference
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeResolveDisableOptimisticCache"
+            app:title="@string/route_resolve_disable_optimistic_cache" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeResolveRewriteTTL"
+            app:title="@string/route_resolve_rewrite_ttl"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeResolveClientSubnet"
+            app:title="@string/route_resolve_client_subnet"
+            app:useSimpleSummaryProvider="true" />
+        <MultiSelectListPreference
+            app:entries="@array/route_sniffer_entry"
+            app:entryValues="@array/route_sniffer_entry"
+            app:icon="@drawable/ic_baseline_search_24"
+            app:key="routeSniffers"
+            app:title="@string/route_sniffers"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:icon="@drawable/ic_baseline_tune_24"
+            app:key="routeSniffTimeout"
+            app:title="@string/route_sniff_timeout"
+            app:useSimpleSummaryProvider="true" />
         <io.nekohasekai.sagernet.widget.OutboundPreference
             app:icon="@drawable/ic_hardware_router"
             app:key="routeOutbound"

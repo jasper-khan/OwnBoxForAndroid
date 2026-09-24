@@ -334,6 +334,53 @@
         <item>udp</item>
     </string-array>
 
+    <string-array name="route_action_entry">
+        <item>@string/route_action_route</item>
+        <item>@string/route_action_resolve</item>
+        <item>@string/route_action_sniff</item>
+        <item>@string/route_action_sniff_override</item>
+        <item>@string/route_action_custom</item>
+    </string-array>
+
+    <string-array name="route_action_value" translatable="false">
+        <item>route</item>
+        <item>resolve</item>
+        <item>sniff</item>
+        <item>sniff-override-destination</item>
+        <item>custom</item>
+    </string-array>
+
+    <string-array name="route_resolve_strategy_entry">
+        <item>@string/auto</item>
+        <item>as_is</item>
+        <item>prefer_ipv4</item>
+        <item>prefer_ipv6</item>
+        <item>ipv4_only</item>
+        <item>ipv6_only</item>
+    </string-array>
+
+    <string-array name="route_resolve_strategy_value" translatable="false">
+        <item></item>
+        <item>as_is</item>
+        <item>prefer_ipv4</item>
+        <item>prefer_ipv6</item>
+        <item>ipv4_only</item>
+        <item>ipv6_only</item>
+    </string-array>
+
+    <string-array name="route_sniffer_entry" translatable="false">
+        <item>http</item>
+        <item>tls</item>
+        <item>quic</item>
+        <item>stun</item>
+        <item>dns</item>
+        <item>bittorrent</item>
+        <item>dtls</item>
+        <item>ssh</item>
+        <item>rdp</item>
+        <item>ntp</item>
+    </string-array>
+
     <string-array name="outbound_entry">
         <item>@string/route_proxy</item>
         <item>@string/route_bypass</item>
