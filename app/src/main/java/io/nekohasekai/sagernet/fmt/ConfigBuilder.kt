@@ -660,9 +660,7 @@ fun buildConfig(
                 cache_file = CacheFile().apply {
                     enabled = true
                     path = "../cache/cache.db"
-                    // if (DataStore.enableClashAPI) {
-                    store_fakeip = true
-                    // }
+                    store_fakeip = false
                 }
 
                 if (DataStore.enableClashAPI || DataStore.allowAccess) {
@@ -1388,27 +1386,12 @@ fun buildConfig(
                     }
 
                     else -> {
-                        if (shouldAddDnsRule) {
-                            if (useFakeDns) {
-                                userDNSRuleList += makeDnsRuleObj().apply {
-                                    server = "dns-fake"
-                                    inbound = listOf("tun-in")
-                                    query_type = listOf("A", "AAAA")
-                                }
-                            } else {
+                        if (!useFakeDns) {
+                            if (shouldAddDnsRule) {
                                 userDNSRuleList += makeDnsRuleObj().apply { server = "dns-remote" }
                             }
-                        }
-                        for ((tag, isIP) in rulesetTags) {
-                            if (!isIP) {
-                                if (useFakeDns) {
-                                    userDNSRuleList += DNSRule_DefaultOptions().apply {
-                                        rule_set = mutableListOf(tag)
-                                        server = "dns-fake"
-                                        inbound = listOf("tun-in")
-                                        query_type = listOf("A", "AAAA")
-                                    }
-                                } else {
+                            for ((tag, isIP) in rulesetTags) {
+                                if (!isIP) {
                                     userDNSRuleList += DNSRule_DefaultOptions().apply {
                                         rule_set = mutableListOf(tag)
                                         server = "dns-remote"
@@ -1793,17 +1776,11 @@ fun buildConfig(
             if (useFakeDns) {
                 dns.servers.add(DNSServerOptions().apply {
                     type = "fakeip"
-                    tag = "dns-fake"
+                    tag = "fakeip"
                     inet4_range = "198.18.0.0/15"
                     if (ipv6Mode != IPv6Mode.DISABLE) {
                         inet6_range = "fc00::/18"
                     }
-                })
-                dns.rules.add(DNSRule_DefaultOptions().apply {
-                    inbound = listOf("tun-in")
-                    server = "dns-fake"
-                    disable_cache = true
-                    query_type = if (ipv6Mode == IPv6Mode.DISABLE) listOf("A") else listOf("A", "AAAA")
                 })
             }
             if (dnsHosts.isNotEmpty()) {
@@ -1870,6 +1847,13 @@ fun buildConfig(
             dns.rules.add(0, DNSRule_DefaultOptions().apply {
                 query_type = listOf("A")
                 action = "reject"
+            })
+        }
+        if (useFakeDns) {
+            dns.rules.add(DNSRule_DefaultOptions().apply {
+                query_type = if (ipv6Mode == IPv6Mode.DISABLE) listOf("A") else listOf("A", "AAAA")
+                server = "fakeip"
+                rewrite_ttl = 1
             })
         }
 
