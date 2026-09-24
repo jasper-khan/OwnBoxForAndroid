@@ -487,7 +487,6 @@
     <string name="resolve_destination_summary">如果目标地址是一个域, 则根据 IPv6 策略传出（与 FakeDNS 冲突）</string>
     <string name="resolve_destination">解析目标地址</string>
     <string name="resolve_match_only">解析仅用于分流</string>
-    <string name="resolve_match_only_summary">解析出的 IP 用于匹配规则，连接目标仍保留域名；开启时优先于“解析目标地址”。</string>
     <string name="destination_override_summary">使用探测的域来覆盖目标地址, 而不是仅用于路由</string>
     <string name="destination_override">覆盖目标地址</string>
     <string name="tun_implementation">TUN 实现</string>

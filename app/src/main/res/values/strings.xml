@@ -613,7 +613,6 @@
         address, not just for routing</string>
     <string name="resolve_destination">Resolve Destination</string>
     <string name="resolve_match_only">Resolve for routing only</string>
-    <string name="resolve_match_only_summary">Use resolved IPs to match rules while keeping the domain as the connection target. Takes precedence over Resolve Destination.</string>
     <string name="resolve_destination_summary">If the destination address is a domain, it is then
         passed out based on the IPv6 strategy (conflicts with FakeDNS)</string>
     <string name="pcap" translatable="false">Pcap</string>

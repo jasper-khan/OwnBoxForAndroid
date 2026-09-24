@@ -159,6 +159,7 @@ class RouteFragment : ToolbarFragment(R.layout.layout_route), Toolbar.OnMenuItem
                         runOnDefaultDispatcher {
                             SagerDatabase.rulesDao.reset()
                             DataStore.rulesFirstCreate = false
+                            DataStore.resolveRouteRuleSeeded = false
                             ruleAdapter.reload()
                         }
                     }
@@ -381,7 +382,7 @@ class RouteFragment : ToolbarFragment(R.layout.layout_route), Toolbar.OnMenuItem
                 routeOutbound.text = rule.displayOutbound()
 
                 // 根据路由类型设置文字颜色
-                val colorRes = when (rule.outbound) {
+                val colorRes = if (rule.isResolveAction()) R.color.color_route_config else when (rule.outbound) {
                     -2L -> R.color.color_route_block   // 屏蔽：红色
                     -1L -> R.color.color_route_direct  // 直连：绿色
                     0L -> R.color.color_route_proxy    // 代理：蓝色

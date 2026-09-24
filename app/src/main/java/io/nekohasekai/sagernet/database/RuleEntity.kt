@@ -5,6 +5,7 @@ import androidx.room.*
 import io.nekohasekai.sagernet.R
 import io.nekohasekai.sagernet.ktx.app
 import kotlinx.parcelize.Parcelize
+import org.json.JSONObject
 
 @Entity(tableName = "rules")
 @Parcelize
@@ -33,6 +34,12 @@ data class RuleEntity(
         return name.takeIf { it.isNotBlank() } ?: "Rule $id"
     }
 
+    fun isResolveAction(matchOnly: Boolean? = null): Boolean = runCatching {
+        val custom = JSONObject(config)
+        custom.optString("action") == "resolve" &&
+            (matchOnly == null || custom.optBoolean("match_only") == matchOnly)
+    }.getOrDefault(false)
+
     fun mkSummary(): String {
         var summary = ""
         if (config.isNotBlank()) summary += "[config]\n"
@@ -56,6 +63,9 @@ data class RuleEntity(
     }
 
     fun displayOutbound(): String {
+        if (isResolveAction()) {
+            return app.getString(if (isResolveAction(true)) R.string.resolve_match_only else R.string.resolve_destination)
+        }
         return when (outbound) {
             0L -> app.getString(R.string.route_proxy)
             -1L -> app.getString(R.string.route_bypass)

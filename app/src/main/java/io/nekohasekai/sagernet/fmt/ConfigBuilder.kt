@@ -374,6 +374,7 @@ fun buildConfig(
     }
 
     val extraRules = if (forTest) listOf() else SagerDatabase.rulesDao.enabledRules()
+    val matchOnlyResolveEnabled = !DataStore.globalMode && extraRules.any { it.isResolveAction(true) }
     val extraProxies =
         if (forTest) mapOf() else SagerDatabase.proxyDao.getEntities(extraRules.mapNotNull { rule ->
             rule.outbound.takeIf { it > 0 && it != proxy.id }
@@ -1305,6 +1306,7 @@ fun buildConfig(
         } else {
             // 应用用户规则
             for (rule in extraRules) {
+                val isResolveAction = rule.isResolveAction()
                 if (rule.packages.isNotEmpty()) {
                     PackageCache.awaitLoadSync()
                 }
@@ -1459,7 +1461,10 @@ fun buildConfig(
                     if (rule.protocol.isNotBlank()) {
                         ruleObj.protocol = rule.protocol.listByLineOrComma()
                     }
-                    if (targetOutbound == TAG_BLOCK) {
+                    if (isResolveAction) {
+                        ruleObj.outbound = null
+                        ruleObj.action = "resolve"
+                    } else if (targetOutbound == TAG_BLOCK) {
                         ruleObj.outbound = null
                         ruleObj.action = "reject"
                     } else {
@@ -1518,7 +1523,7 @@ fun buildConfig(
                 }
 
                 for (subRule in generatedSubRules) {
-                    if (subRule.action != "reject" && subRule.outbound.isNullOrBlank()) {
+                    if (subRule.action != "reject" && subRule.action != "resolve" && subRule.outbound.isNullOrBlank()) {
                         Toast.makeText(
                             SagerNet.application,
                             "Warning: " + rule.displayName() + ": A non-existent outbound was specified.",
@@ -1702,12 +1707,11 @@ fun buildConfig(
                 })
             }
 
-            // 3. resolve 动作：为 IP 规则匹配提供真实地址；match_only 保留域名作为连接目标。
-            if (useFakeDns || DataStore.resolveDestination || DataStore.resolveMatchOnly || ipv6Mode == IPv6Mode.DISABLE || ipv6Mode == IPv6Mode.ONLY) {
+            // 3. resolve 动作：为 IP 规则匹配提供真实地址。
+            if (!matchOnlyResolveEnabled && (useFakeDns || DataStore.resolveDestination || ipv6Mode == IPv6Mode.DISABLE || ipv6Mode == IPv6Mode.ONLY)) {
                 topRouteRules.add(Rule_DefaultOptions().apply {
                     action = "resolve"
                     strategy = genDomainStrategy(true)
-                    if (DataStore.resolveMatchOnly) match_only = true
                 })
             }
 

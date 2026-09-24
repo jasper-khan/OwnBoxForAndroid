@@ -119,7 +119,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
 
     var trafficSniffing by configurationStore.stringToInt(Key.TRAFFIC_SNIFFING) { 1 }
     var resolveDestination by configurationStore.boolean(Key.RESOLVE_DESTINATION)
-    var resolveMatchOnly by configurationStore.boolean(Key.RESOLVE_MATCH_ONLY)
+    var resolveRouteRuleSeeded by configurationStore.boolean("resolveRouteRuleSeeded")
 
     var mtu by configurationStore.stringToInt(Key.MTU) { 9000 }
 

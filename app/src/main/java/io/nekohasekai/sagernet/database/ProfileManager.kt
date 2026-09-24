@@ -7,6 +7,7 @@ import io.nekohasekai.sagernet.fmt.AbstractBean
 import io.nekohasekai.sagernet.ktx.Logs
 import io.nekohasekai.sagernet.ktx.app
 import io.nekohasekai.sagernet.ktx.applyDefaultValues
+import moe.matsuri.nb4a.utils.listByLineOrComma
 import java.io.IOException
 import java.sql.SQLException
 import java.util.*
@@ -296,6 +297,28 @@ object ProfileManager {
             if (needReload) {
                 rules = SagerDatabase.rulesDao.allRules()
             }
+        }
+        if (rules.isNotEmpty() && !DataStore.resolveRouteRuleSeeded) {
+            if (rules.none { it.isResolveAction(true) }) {
+                val resolveRule = RuleEntity(
+                    name = app.getString(R.string.resolve_match_only),
+                    config = """{"action":"resolve","match_only":true,"strategy":"ipv4_only"}""",
+                    enabled = DataStore.configurationStore.getBoolean("resolveMatchOnly", false)
+                )
+                val chinaIpIndex = rules.indexOfFirst { it.ip.listByLineOrComma().contains("geoip:cn") }
+                if (chinaIpIndex >= 0) {
+                    resolveRule.userOrder = rules[chinaIpIndex].userOrder
+                    val following = rules.drop(chinaIpIndex)
+                    following.forEach { it.userOrder++ }
+                    SagerDatabase.rulesDao.updateRules(following)
+                } else {
+                    resolveRule.userOrder = SagerDatabase.rulesDao.nextOrder() ?: 1
+                }
+                SagerDatabase.rulesDao.createRule(resolveRule)
+                rules = SagerDatabase.rulesDao.allRules()
+            }
+            DataStore.resolveRouteRuleSeeded = true
+            DataStore.configurationStore.remove("resolveMatchOnly")
         }
         return rules
     }
