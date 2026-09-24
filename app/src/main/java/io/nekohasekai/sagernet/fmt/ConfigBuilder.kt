@@ -1706,10 +1706,6 @@ fun buildConfig(
 
             // 3. hijack-dns 拦截入站 DNS 流量进入内置 DNS 引擎
             topRouteRules.add(Rule_DefaultOptions().apply {
-                port = listOf(53)
-                action = "hijack-dns"
-            })
-            topRouteRules.add(Rule_DefaultOptions().apply {
                 protocol = listOf("dns")
                 action = "hijack-dns"
             })
