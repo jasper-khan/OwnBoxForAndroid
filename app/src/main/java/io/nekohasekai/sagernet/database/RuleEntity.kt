@@ -34,10 +34,6 @@ data class RuleEntity(
         return name.takeIf { it.isNotBlank() } ?: "Rule $id"
     }
 
-    fun routeAction(): String = runCatching {
-        JSONObject(config).optString("action").ifBlank { "route" }
-    }.getOrDefault("route")
-
     fun isResolveAction(matchOnly: Boolean? = null): Boolean = runCatching {
         val custom = JSONObject(config)
         custom.optString("action") == "resolve" &&
@@ -67,14 +63,8 @@ data class RuleEntity(
     }
 
     fun displayOutbound(): String {
-        when (val action = routeAction()) {
-            "resolve" -> return app.getString(if (isResolveAction(true)) R.string.resolve_match_only else R.string.resolve_destination)
-            "sniff" -> return app.getString(R.string.route_action_sniff)
-            "sniff-override-destination" -> return app.getString(R.string.route_action_sniff_override)
-            "reject" -> return app.getString(R.string.route_action_reject)
-            "hijack-dns" -> return app.getString(R.string.route_action_hijack_dns)
-            "route" -> Unit
-            else -> return action
+        if (isResolveAction()) {
+            return app.getString(if (isResolveAction(true)) R.string.resolve_match_only else R.string.resolve_destination)
         }
         return when (outbound) {
             0L -> app.getString(R.string.route_proxy)
