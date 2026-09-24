@@ -1671,18 +1671,6 @@ fun buildConfig(
             dns.rules = testRules
         } else {
             // built-in DNS rules
-            if (ipv6Mode == IPv6Mode.DISABLE) {
-                dns.rules.add(0, DNSRule_DefaultOptions().apply {
-                    query_type = listOf("AAAA")
-                    action = "reject"
-                })
-            } else if (ipv6Mode == IPv6Mode.ONLY) {
-                dns.rules.add(0, DNSRule_DefaultOptions().apply {
-                    query_type = listOf("A")
-                    action = "reject"
-                })
-            }
-
             // 提取 directDNS 与 remoteDns 的域名及 IP/CIDR 目标
             val (rawDirectDomains, directIps) = extractDnsTargets(directDNS, false)
             val (rawRemoteDomains, remoteIps) = extractDnsTargets(remoteDns, true)
