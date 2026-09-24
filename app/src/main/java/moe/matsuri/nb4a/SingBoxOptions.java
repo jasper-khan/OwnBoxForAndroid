@@ -4693,6 +4693,10 @@ public class SingBoxOptions {
 
         public String action;
 
+        public List<String> sniffer;
+
+        public String timeout;
+
         public String outbound;
 
         // sing-box 1.13 resolve 规则动作使用（RouteActionResolve.strategy）

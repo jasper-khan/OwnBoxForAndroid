@@ -1683,7 +1683,10 @@ fun buildConfig(
             // 1. sing-box 1.13：sniff（须位于规则最前）
             if (needSniff) {
                 topRouteRules.add(Rule_DefaultOptions().apply {
+                    port = listOf(80, 443, 3478, 5228, 8443)
                     action = "sniff"
+                    sniffer = listOf("http", "tls", "quic", "stun")
+                    timeout = "300ms"
                 })
                 if (DataStore.trafficSniffing == 2) {
                     topRouteRules.add(Rule_DefaultOptions().apply {
