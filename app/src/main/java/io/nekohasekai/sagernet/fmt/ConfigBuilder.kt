@@ -1770,16 +1770,6 @@ fun buildConfig(
                 })
             }
 
-            // 7. 未拦截远程 DNS 兜底保护（port 53 / protocol dns 流量强制走代理）
-            topRouteRules.add(Rule_DefaultOptions().apply {
-                port = listOf(53)
-                outbound = mainProxyTag
-            })
-            topRouteRules.add(Rule_DefaultOptions().apply {
-                protocol = listOf("dns")
-                outbound = mainProxyTag
-            })
-
             route.rules.addAll(0, topRouteRules)
 
             if (DataStore.bypassLanInCore) {
