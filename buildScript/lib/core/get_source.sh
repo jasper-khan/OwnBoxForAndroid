@@ -17,9 +17,9 @@ if ! printf '%s' "$SINGBOX_VERSION" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-
   echo ">> ERROR: invalid SINGBOX_VERSION tag: $SINGBOX_VERSION" >&2
   exit 1
 fi
-echo ">> Using reF1nd sing-box $SINGBOX_VERSION"
+echo ">> Using OwnBox sing-box fork $SINGBOX_VERSION"
 
-FORK_REPO="https://github.com/reF1nd/sing-box.git"
+FORK_REPO="https://github.com/jasper-khan/sing-box.git"
 SOURCE_DIR="sing-box-ref1nd"
 
 pushd ..
@@ -56,7 +56,7 @@ if [ "$ACTUAL_COMMIT" != "$EXPECTED_COMMIT" ]; then
   echo ">> ERROR: sing-box HEAD $ACTUAL_COMMIT does not match $SINGBOX_VERSION ($EXPECTED_COMMIT)" >&2
   exit 1
 fi
-echo ">> Verified reF1nd sing-box $SINGBOX_VERSION at $ACTUAL_COMMIT"
+echo ">> Verified OwnBox sing-box fork $SINGBOX_VERSION at $ACTUAL_COMMIT"
 popd
 
 popd

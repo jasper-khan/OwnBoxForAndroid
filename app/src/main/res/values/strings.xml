@@ -844,6 +844,8 @@
     <string name="format_snlink_upper">SNLINK</string>
     <string name="format_snlink_lower">snlink</string>
     <string name="testing_node_speed">Testing node speed...</string>
+    <string name="concurrent_dial">Concurrent Dial (all resolved IPs)</string>
+    <string name="concurrent_dial_summary">Dial every IPv4/IPv6 address resolved from DNS at the same time and use the first successful connection. Increases the number of simultaneous connection attempts.</string>
     <string name="amoled_theme">AMOLED True Black</string>
     <string name="amoled_theme_summary">Use pure black #000000 background in dark mode to save OLED battery</string>
     <string name="import_clipboard_prompt">Detected proxy or subscription configuration in clipboard. Do you want to import it?</string>

@@ -125,6 +125,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
 
     var bypassLan by configurationStore.boolean(Key.BYPASS_LAN)
     var bypassLanInCore by configurationStore.boolean(Key.BYPASS_LAN_IN_CORE)
+    var concurrentDial by configurationStore.boolean(Key.CONCURRENT_DIAL)
     var autoSelectLowestLatency by configurationStore.boolean(Key.AUTO_SELECT_LOWEST_LATENCY)
 
     var allowAccess by configurationStore.boolean(Key.ALLOW_ACCESS)

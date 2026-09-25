@@ -428,6 +428,17 @@ class DocsFragment : ToolbarFragment(R.layout.layout_docs) {
         allItems.add(
             DocListItem.Item(
                 category = "核心设置",
+                title = "并发拨号 (concurrentDial)",
+                badge = "推荐: 按需开启",
+                desc = "把域名解析出的所有 IP（IPv4/IPv6）同时拨号，谁先连通用谁，可绕开解析结果里不通的地址。",
+                prosCons = "【利】连接建立更快，单个 IP 不可用时不会干等；【弊】瞬时并发连接数变多，个别网络下更耗电。",
+                recommendation = "【推荐】直连流量多或节点服务器域名解析出多个 IP 时开启；只解析出一个 IP 时几乎没有区别。",
+                keywords = "并发拨号 concurrentDial 多IP 抢连 先到先用",
+            )
+        )
+        allItems.add(
+            DocListItem.Item(
+                category = "核心设置",
                 title = "规则集更新地址与间隔 (rulesProvider / rulesGeositeUrl / rulesGeoipUrl / rulesUpdateInterval)",
                 badge = "推荐: 官方默认源，间隔 0 (手动)",
                 desc = "配置精准分流所依赖的 Geosite（域名库）和 GeoIP（IP 分布库）数据库下载链接与自动定时更新频率。",

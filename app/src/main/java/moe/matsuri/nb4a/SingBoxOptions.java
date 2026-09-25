@@ -1132,6 +1132,9 @@ public class SingBoxOptions {
         // sing-box 1.11+ 网络策略（default/fallback/hybrid），用于选择网络接口（仅 Android/iOS 图形客户端）
         public String default_network_strategy;
 
+        // OwnBox: 并发拨号，DNS 解析出的所有地址同时拨号，先连上的先用
+        public Boolean default_concurrent_dial;
+
         public String default_domain_resolver;
     }
 

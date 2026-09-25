@@ -783,6 +783,11 @@ fun buildConfig(
             // 默认域名解析器强制走直连物理 DNS，彻底消除出站节点服务器域名在内核启动与规则集拉取时的循环死锁
             default_domain_resolver = "dns-direct"
 
+            // 并发拨号：域名解析出的所有 IP（IPv4/IPv6）同时拨号，谁先连通用谁
+            if (DataStore.concurrentDial) {
+                default_concurrent_dial = true
+            }
+
         }
 
         // returns outbound tag
