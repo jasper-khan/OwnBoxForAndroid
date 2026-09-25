@@ -3,9 +3,11 @@ package libcore
 import (
 	"fmt"
 	"net"
+	"net/netip"
 	"strings"
 
 	"github.com/oschwald/maxminddb-golang"
+	"github.com/sagernet/sing/common/json/badoption"
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/option"
 )
@@ -43,9 +45,10 @@ func (g *geoip) Rules(countryCode string) ([]option.HeadlessRule, error) {
 	}
 
 	var headlessRule option.DefaultHeadlessRule
-	headlessRule.IPCIDR = make([]string, 0, len(ipNets))
+	headlessRule.IPCIDR = make(badoption.Listable[*badoption.Prefixable], 0, len(ipNets))
 	for _, cidr := range ipNets {
-		headlessRule.IPCIDR = append(headlessRule.IPCIDR, cidr.String())
+		prefix := badoption.Prefixable(netip.MustParsePrefix(cidr.String()))
+		headlessRule.IPCIDR = append(headlessRule.IPCIDR, &prefix)
 	}
 
 	return []option.HeadlessRule{
