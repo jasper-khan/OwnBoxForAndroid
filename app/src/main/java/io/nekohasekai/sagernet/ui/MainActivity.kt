@@ -717,7 +717,7 @@ class MainActivity : ThemedActivity(),
                 Key.PROXY_APPS, Key.BYPASS_MODE, Key.INDIVIDUAL -> {
                     if (DataStore.serviceState.canStop) {
                         snackbar(getString(R.string.need_reload)).setAction(R.string.apply) {
-                            SagerNet.reloadService()
+                            SagerNet.restartService()
                         }.show()
                     }
                 }

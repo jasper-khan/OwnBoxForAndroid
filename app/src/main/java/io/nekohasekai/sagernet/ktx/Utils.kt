@@ -300,16 +300,9 @@ fun Fragment.startFilesForResult(
 fun Fragment.needReload() {
     if (DataStore.serviceState.started) {
         snackbar(getString(R.string.need_reload)).setAction(R.string.apply) {
-            SagerNet.reloadService()
+            SagerNet.restartService()
         }.show()
     }
-}
-
-fun Fragment.needRestart() {
-    val appContext = context?.applicationContext ?: return
-    snackbar(R.string.need_restart).setAction(R.string.apply) {
-        triggerFullRestart(appContext)
-    }.show()
 }
 
 fun triggerFullRestart(ctx: Context) {

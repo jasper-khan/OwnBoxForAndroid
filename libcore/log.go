@@ -19,6 +19,17 @@ type fileLogWriter struct {
 
 var platformLog = new(fileLogWriter)
 
+// SetLogOptions updates the file logger without restarting the app process.
+func SetLogOptions(maxSizeKb int32, enabled bool) {
+	if maxSizeKb < 50 {
+		maxSizeKb = 50
+	}
+	platformLog.access.Lock()
+	platformLog.maxSize = int64(maxSizeKb) * 1024
+	platformLog.disabled = !enabled
+	platformLog.access.Unlock()
+}
+
 // setupLog 初始化日志文件；truncateOnStart 时在原 inode 上清空旧日志。
 // Android 的主进程和 :bg 进程会同时持有 neko.log。不能先 Remove 再 Open，
 // 否则较早启动的进程仍会写入已取消链接的旧 inode，导出时只能看到后启动进程的日志。

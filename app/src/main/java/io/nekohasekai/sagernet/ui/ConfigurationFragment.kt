@@ -1559,7 +1559,7 @@ class ConfigurationFragment @JvmOverloads constructor(
                                     try {
                                         // 再次等待确保配置已保存
                                         delay(100)
-                                        SagerNet.reloadService()
+                                        SagerNet.restartService()
                                     } catch (e: Exception) {
                                         Logs.w(e)
                                         onMainDispatcher {

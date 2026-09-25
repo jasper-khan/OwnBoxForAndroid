@@ -56,6 +56,7 @@ class BaseService {
                 Action.RELOAD -> service.reload()
                 Action.RESTART -> {
                     Logs.i("BaseService: received Action.RESTART, forcing full stopRunner(restart = true)")
+                    Libcore.setLogOptions(DataStore.logBufSize, DataStore.logLevel > 0)
                     service.stopRunner(restart = true)
                 }
                 // Action.SWITCH_WAKE_LOCK -> runOnDefaultDispatcher { service.switchWakeLock() }

@@ -144,8 +144,9 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
         globalCustomConfig.useConfigStore(Key.GLOBAL_CUSTOM_CONFIG)
 
         logLevel.dialogLayoutResource = R.layout.layout_loglevel_help
-        logLevel.setOnPreferenceChangeListener { _, _ ->
-            needRestart()
+        logLevel.setOnPreferenceChangeListener { _, newValue ->
+            Libcore.setLogOptions(DataStore.logBufSize, (newValue as String).toInt() > 0)
+            needReload()
             true
         }
         logLevel.setOnLongClickListener {
@@ -163,7 +164,8 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
                 .setPositiveButton(android.R.string.ok) { _, _ ->
                     DataStore.logBufSize = view.text.toString().toInt()
                     if (DataStore.logBufSize <= 0) DataStore.logBufSize = 50
-                    needRestart()
+                    Libcore.setLogOptions(DataStore.logBufSize, DataStore.logLevel > 0)
+                    needReload()
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
