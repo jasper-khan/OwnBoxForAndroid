@@ -2,6 +2,7 @@ package urltest
 
 import (
 	"context"
+	"io"
 	"maps"
 	"net"
 	"sync"
@@ -154,6 +155,11 @@ func (s *URLTest) Selected(network string) adapter.Outbound {
 		outbound, _ = s.group.Select(network)
 	}
 	return outbound
+}
+
+func (s *URLTest) AttachConnection(closer io.Closer) func() {
+	s.group.Touch()
+	return s.group.interruptGroup.Add(closer, true)
 }
 
 func (s *URLTest) References() []string {
