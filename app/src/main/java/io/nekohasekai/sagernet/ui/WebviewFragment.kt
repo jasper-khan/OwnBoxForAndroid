@@ -24,6 +24,8 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
 
     lateinit var mWebView: WebView
 
+    private var panelServerSeeded = false
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -49,6 +51,7 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                seedPanelServer(view, url)
             }
         }
         mWebView.loadUrl(DataStore.panelURL)
@@ -103,5 +106,40 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
             }
         }
         return true
+    }
+
+    /**
+     * 官方 dashboard 首次打开是它自己的连接页，需要手动点一次 Connect。
+     * 面板是内嵌 WebView，这里替用户一次性写入本地连接记录，保持“点开就是面板”。
+     * 只对内核本地面板生效：已有记录（含用户自建服务器）不覆盖，失败也只是退回连接页。
+     */
+    private fun seedPanelServer(webView: WebView?, url: String?) {
+        if (panelServerSeeded || webView == null || url == null) return
+        if (!url.startsWith(LOCAL_PANEL_PREFIX)) return
+        panelServerSeeded = true
+        webView.evaluateJavascript(SEED_PANEL_SERVER_JS) { result ->
+            if (result?.trim('"') == "1") webView.reload()
+        }
+    }
+
+    companion object {
+
+        private const val LOCAL_PANEL_PREFIX = "http://127.0.0.1:9091/dashboard"
+
+        // 官方 dashboard 的服务器列表存在 localStorage["servers"]，url 不带协议（见其 re()/k()）
+        private val SEED_PANEL_SERVER_JS = """
+            (function () {
+                try {
+                    if (localStorage.getItem('servers')) return '0';
+                    localStorage.setItem('servers', JSON.stringify({
+                        servers: [{ id: 'ownbox-local', name: 'OwnBox', url: location.host, secret: '' }],
+                        activeId: 'ownbox-local'
+                    }));
+                    return '1';
+                } catch (e) {
+                    return '0';
+                }
+            })()
+        """.trimIndent()
     }
 }
