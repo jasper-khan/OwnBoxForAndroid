@@ -6,10 +6,6 @@ on:
       - main
   workflow_dispatch:
     inputs:
-      build_only:
-        description: Build APK without publishing a release
-        type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -40,19 +36,6 @@ jobs:
       - name: Native Build
         if: steps.cache.outputs.cache-hit != 'true'
         run: ./run lib core
-      - name: Verify LibCore AAR
-        run: |
-          test -s app/libs/libcore.aar
-          unzip -p app/libs/libcore.aar classes.jar > /tmp/libcore-classes.jar
-          unzip -l /tmp/libcore-classes.jar | grep -q 'libcore/Libcore.class'
-          unzip -l /tmp/libcore-classes.jar | grep -q 'go/Seq.class'
-      - name: Upload LibCore AAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: libcore-aar
-          path: app/libs/libcore.aar
-          if-no-files-found: error
-          retention-days: 1
   build:
     name: Build OSS APK
     runs-on: ubuntu-latest
@@ -61,17 +44,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Download LibCore AAR
-        uses: actions/download-artifact@v4
+      - name: Golang Status
+        run: find buildScript libcore/*.sh nb4a.properties | xargs cat | sha1sum > golang_status
+      - name: Libcore Status
+        run: git ls-files libcore | xargs cat | sha1sum > libcore_status
+      - name: LibCore Cache
+        uses: actions/cache@v4
         with:
-          name: libcore-aar
-          path: app/libs
-      - name: Verify LibCore AAR
-        run: |
-          test -s app/libs/libcore.aar
-          unzip -p app/libs/libcore.aar classes.jar > /tmp/libcore-classes.jar
-          unzip -l /tmp/libcore-classes.jar | grep -q 'libcore/Libcore.class'
-          unzip -l /tmp/libcore-classes.jar | grep -q 'go/Seq.class'
+          path: |
+            app/libs/libcore.aar
+          key: ${{ hashFiles('.github/workflows/*', 'golang_status', 'libcore_status') }}
       - name: Gradle cache
         uses: actions/cache@v4
         with:
@@ -116,7 +98,6 @@ jobs:
 
   publish:
     name: Publish Preview Release
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.build_only }}
     runs-on: ubuntu-latest
     needs: build
     permissions:
