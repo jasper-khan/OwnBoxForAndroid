@@ -38,8 +38,6 @@ object Key {
 
     const val BYPASS_LAN = "bypassLan"
     const val BYPASS_LAN_IN_CORE = "bypassLanInCore"
-    const val CONCURRENT_DIAL = "concurrentDial" // 留作未来补回并发拨号功能
-    const val DUAL_NETWORK_ACCELERATION = "dualNetworkAcceleration"
     const val AUTO_SELECT_LOWEST_LATENCY = "autoSelectLowestLatency"
 
     const val MIXED_PORT = "mixedPort"

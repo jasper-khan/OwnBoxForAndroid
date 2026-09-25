@@ -26,14 +26,14 @@
 
 ### Requirement: sing-box 配置符合官方 schema
 
-配置生成 MUST 以当前 `SINGBOX_VERSION` 对应的官方 schema 为准。入站嗅探与目标解析 MUST 使用位于路由规则前部的 `sniff`/`resolve` 动作；TUN 地址 MUST 使用合并后的 `address` 字段；双网络加速 MUST 映射为 `default_network_strategy: "hybrid"`。已被官方移除的 legacy 字段 MUST NOT 被发射。
+配置生成 MUST 以当前 `SINGBOX_VERSION` 对应的官方 schema 为准。入站嗅探与目标解析 MUST 使用位于路由规则前部的 `sniff`/`resolve` 动作；TUN 地址 MUST 使用合并后的 `address` 字段。已被官方移除的 legacy 字段 MUST NOT 被发射。
 
 #### Scenario: 生成正式连接配置
 
-- **GIVEN** 用户启用流量嗅探、IPv6 或双网络加速等设置
+- **GIVEN** 用户启用流量嗅探、IPv6 等设置
 - **WHEN** `ConfigBuilder` 生成 sing-box 配置
 - **THEN** 输出可被目标官方内核 schema 接受
-- **AND** 不包含已移除的入站 sniff、legacy TUN 地址或 `route.concurrent_dial` 字段
+- **AND** 不包含已移除的入站 sniff 或 legacy TUN 地址字段
 
 ### Requirement: 链式配置引用必须解析到最终出站标签
 

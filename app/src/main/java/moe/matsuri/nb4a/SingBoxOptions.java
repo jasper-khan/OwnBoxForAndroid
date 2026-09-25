@@ -1129,7 +1129,7 @@ public class SingBoxOptions {
 
         public Integer default_mark;
 
-        // sing-box 1.13 网络策略（default/fallback/hybrid），替代已移除的 concurrent_dial
+        // sing-box 1.11+ 网络策略（default/fallback/hybrid），用于选择网络接口（仅 Android/iOS 图形客户端）
         public String default_network_strategy;
 
         public String default_domain_resolver;

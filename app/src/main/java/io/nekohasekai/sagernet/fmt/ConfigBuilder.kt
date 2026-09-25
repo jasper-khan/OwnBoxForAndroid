@@ -783,13 +783,6 @@ fun buildConfig(
             // 默认域名解析器强制走直连物理 DNS，彻底消除出站节点服务器域名在内核启动与规则集拉取时的循环死锁
             default_domain_resolver = "dns-direct"
 
-            // 双网络加速与并发拨号策略
-            // hybrid: 在所有可用接口并发传输；fallback: 并发快速容灾拨号（Happy Eyeballs）
-            if (DataStore.dualNetworkAcceleration) {
-                default_network_strategy = "hybrid"
-            } else if (DataStore.concurrentDial) {
-                default_network_strategy = "fallback"
-            }
         }
 
         // returns outbound tag

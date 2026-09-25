@@ -428,28 +428,6 @@ class DocsFragment : ToolbarFragment(R.layout.layout_docs) {
         allItems.add(
             DocListItem.Item(
                 category = "核心设置",
-                title = "双网络加速 / 多路径 (dualNetworkAcceleration)",
-                badge = "推荐: 关闭",
-                desc = "同时聚合利用 Wi-Fi 和蜂窝移动数据两个物理网络接口并发发送数据包提升带宽与抗抖动。",
-                prosCons = "【利】网络切换时瞬间平滑无缝；【弊】移动蜂窝流量持续偷跑，且双出口可能触发部分机场节点的并发与多地 IP 登录风控封号。",
-                recommendation = "【最稳推荐：推荐关闭】单网络出站最稳健，完全避免被机场误判多设备违规封禁。",
-                keywords = "双网加速 多路径 移动数据 并发 流量 封号",
-            )
-        )
-        allItems.add(
-            DocListItem.Item(
-                category = "核心设置",
-                title = "并发连接建立 (concurrentDial)",
-                badge = "推荐: 关闭",
-                desc = "向目标节点建立 TCP 隧道时，同时发起多条拨号建链并取最先响应的一条。",
-                prosCons = "【利】极限微幅压缩冷启动握手耗时；【弊】服务器端瞬间承受翻倍的连接握手压力，容易引起防火墙限速。",
-                recommendation = "【最稳推荐：保持默认关闭】单路建链最温和稳定。",
-                keywords = "并发拨号 concurrentDial 握手 延迟",
-            )
-        )
-        allItems.add(
-            DocListItem.Item(
-                category = "核心设置",
                 title = "规则集更新地址与间隔 (rulesProvider / rulesGeositeUrl / rulesGeoipUrl / rulesUpdateInterval)",
                 badge = "推荐: 官方默认源，间隔 0 (手动)",
                 desc = "配置精准分流所依赖的 Geosite（域名库）和 GeoIP（IP 分布库）数据库下载链接与自动定时更新频率。",

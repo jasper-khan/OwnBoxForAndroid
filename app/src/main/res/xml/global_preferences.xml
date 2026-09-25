@@ -252,18 +252,6 @@
             app:title="@string/ipv6"
             app:useSimpleSummaryProvider="true" />
 
-        <SwitchPreference
-            app:icon="@drawable/ic_baseline_compare_arrows_24"
-            app:key="dualNetworkAcceleration"
-            app:summary="@string/dual_network_acceleration_summary"
-            app:title="@string/dual_network_acceleration" />
-
-        <SwitchPreference
-            app:icon="@drawable/ic_baseline_speed_24"
-            app:key="concurrentDial"
-            app:summary="@string/concurrent_dial_summary"
-            app:title="@string/concurrent_dial" />
-
         <moe.matsuri.nb4a.ui.SimpleMenuPreference
             app:defaultValue="0"
             app:entries="@array/rules_dat_provider"
