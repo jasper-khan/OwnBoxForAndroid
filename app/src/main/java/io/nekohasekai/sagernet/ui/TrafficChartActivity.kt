@@ -109,7 +109,7 @@ class TrafficChartActivity : ThemedActivity() {
     private fun connectTrafficWebSocket() {
         if (trafficWebSocket != null) return
         val request = Request.Builder()
-            .url("ws://127.0.0.1:9090/traffic")
+            .url("ws://127.0.0.1:9091/traffic")
             .build()
 
         trafficWebSocket = client.newWebSocket(request, object : WebSocketListener() {
@@ -149,7 +149,7 @@ class TrafficChartActivity : ThemedActivity() {
                             binding.cardConnectionError.visibility = View.VISIBLE
                         } else {
                             binding.chartStatusHint.visibility = View.VISIBLE
-                            binding.chartStatusHint.text = "正在连接 Clash 监控服务 (127.0.0.1:9090)..."
+                            binding.chartStatusHint.text = "正在连接 Clash 监控服务 (127.0.0.1:9091)..."
                         }
                     }
                     // Reconnect attempt

@@ -67,7 +67,7 @@ class ObservabilityActivity : ThemedActivity() {
 
     private fun loadSnapshot(): Snapshot {
         fun get(path: String): JSONObject {
-            val request = Request.Builder().url("http://127.0.0.1:9090/observability/v1/$path").build()
+            val request = Request.Builder().url("http://127.0.0.1:9091/observability/v1/$path").build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
                 return JSONObject(response.body?.string() ?: throw IOException("Empty response"))

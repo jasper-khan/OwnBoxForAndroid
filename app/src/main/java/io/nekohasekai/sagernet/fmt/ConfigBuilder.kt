@@ -652,13 +652,14 @@ fun buildConfig(
 
     return MyOptions().apply {
         // 官方 sing-box dashboard：走 1.14+ 的 api 服务（gRPC-Web），面板文件由 APK
-        // 内置解压到 files/dashboard；Clash API 保留给流量图表/连接诊断/局域网共享。
+        // 内置解压到 files/dashboard；9090 让给面板，Clash API 退到 9091，只服务
+        // 应用内的流量图表、连接诊断与局域网连接列表。
         if (!forTest && (DataStore.enableClashAPI || DataStore.allowAccess)) {
             _hack_config_map["services"] = listOf(
                 mapOf(
                     "type" to "api",
                     "listen" to "127.0.0.1",
-                    "listen_port" to 9091,
+                    "listen_port" to 9090,
                     "dashboard" to "../files/dashboard",
                 )
             )
@@ -678,7 +679,7 @@ fun buildConfig(
 
                 if (DataStore.enableClashAPI || DataStore.allowAccess) {
                     clash_api = ClashAPIOptions().apply {
-                        external_controller = "127.0.0.1:9090"
+                        external_controller = "127.0.0.1:9091"
                     }
                     if (DataStore.enableObservability) {
                         observability = ObservabilityOptions().apply { enabled = true }

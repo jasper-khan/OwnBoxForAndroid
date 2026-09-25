@@ -506,7 +506,7 @@
     <string name="set_panel_url">تعیین لینک صفحه</string>
     <string name="enable_clash_api">فعال کردن Clash API</string>
     <string name="log_level">سطح ثبت آمار</string>
-    <string name="enable_clash_api_summary">ارائه Clash API در 127.0.0.1:9090 و صفحه sing-box در 127.0.0.1:9091</string>
+    <string name="enable_clash_api_summary">ارائه Clash API در 127.0.0.1:9091 و صفحه sing-box در 127.0.0.1:9090</string>
     <string name="xtls_flow">Flow (VLESS دستورالعمل فرعی)</string>
     <string name="ads">تبلیغات</string>
     <string name="bypass_lan_in_core">دورزدن شبکه محلی در هسته برنامه</string>

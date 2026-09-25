@@ -519,7 +519,7 @@ class LanSharingActivity : ThemedActivity(), SagerConnection.Callback {
     private fun fetchActiveClientsFromClash(): Map<String, ClientDevice> {
         val result = mutableMapOf<String, ClientDevice>()
         try {
-            val req = Request.Builder().url("http://127.0.0.1:9090/connections").build()
+            val req = Request.Builder().url("http://127.0.0.1:9091/connections").build()
             httpClient.newCall(req).execute().use { resp ->
                 if (!resp.isSuccessful) return emptyMap()
                 val bodyStr = resp.body?.string() ?: return emptyMap()

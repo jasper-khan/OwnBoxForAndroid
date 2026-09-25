@@ -281,7 +281,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var profileTrafficStatistics by configurationStore.boolean(Key.PROFILE_TRAFFIC_STATISTICS) { true }
 
     /** 面板地址，默认指向内核 api 服务提供的官方 sing-box dashboard。 */
-    var panelURL by configurationStore.string("panelURL") { "http://127.0.0.1:9091/dashboard/" }
+    var panelURL by configurationStore.string("panelURL") { "http://127.0.0.1:9090/dashboard/" }
 
     // protocol
 

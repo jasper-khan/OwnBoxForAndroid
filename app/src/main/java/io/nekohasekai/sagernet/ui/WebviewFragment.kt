@@ -54,6 +54,7 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
                 seedPanelServer(view, url)
             }
         }
+        migrateLegacyPanelUrl()
         mWebView.loadUrl(DataStore.panelURL)
 
         if (!DataStore.serviceState.connected) {
@@ -122,9 +123,18 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
         }
     }
 
+    /** 上一个预览版把面板放在 9091，换到 9090 后自动迁移默认地址，避免打开是 404。 */
+    private fun migrateLegacyPanelUrl() {
+        if (DataStore.panelURL == LEGACY_PANEL_URL) {
+            DataStore.panelURL = DEFAULT_PANEL_URL
+        }
+    }
+
     companion object {
 
-        private const val LOCAL_PANEL_PREFIX = "http://127.0.0.1:9091/dashboard"
+        private const val DEFAULT_PANEL_URL = "http://127.0.0.1:9090/dashboard/"
+        private const val LEGACY_PANEL_URL = "http://127.0.0.1:9091/dashboard/"
+        private const val LOCAL_PANEL_PREFIX = "http://127.0.0.1:9090/dashboard"
 
         // 官方 dashboard 的服务器列表存在 localStorage["servers"]，url 不带协议（见其 re()/k()）
         private val SEED_PANEL_SERVER_JS = """

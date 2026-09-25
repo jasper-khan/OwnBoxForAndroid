@@ -117,7 +117,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="未能连接到本地内核监控端口 (127.0.0.1:9090)，可能正在初始化，可点击下方重试。"
+                        android:text="未能连接到本地内核监控端口 (127.0.0.1:9091)，可能正在初始化，可点击下方重试。"
                         android:textColor="#B91C1C"
                         android:textSize="13sp" />
 
