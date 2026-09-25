@@ -1,4 +1,4 @@
-# OwnBox v2.8.15-preview 预览版
+# OwnBox v2.8.16-preview 预览版
 
-- sing-box 内核升级至 reF1nd/sing-box v1.15.0-alpha.8-reF1nd。
-- 移除自动附加的 QQ、微信及腾讯域名直连路由和直连 DNS 规则。
+- 修正 MTU 1500 在 TUN 配置和 Android VPN 中被改写为 1400 的问题。
+- 修复离开设置页后点击重启提示“应用”导致的崩溃。

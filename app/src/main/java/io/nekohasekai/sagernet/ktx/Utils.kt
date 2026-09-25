@@ -306,8 +306,9 @@ fun Fragment.needReload() {
 }
 
 fun Fragment.needRestart() {
+    val appContext = context?.applicationContext ?: return
     snackbar(R.string.need_restart).setAction(R.string.apply) {
-        triggerFullRestart(requireContext())
+        triggerFullRestart(appContext)
     }.show()
 }
 

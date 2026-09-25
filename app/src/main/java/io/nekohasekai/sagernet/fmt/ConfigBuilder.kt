@@ -725,7 +725,7 @@ fun buildConfig(
                     TunImplementation.SING_TUN -> null
                     else -> null
                 }
-                mtu = if (DataStore.mtu == 1500) 1400 else DataStore.mtu
+                mtu = DataStore.mtu
                 auto_route = true
                 strict_route = DataStore.strictRoute
                 // sing-box 1.13 移除了入站 sniff/domain_strategy 字段，
