@@ -82,6 +82,15 @@ func InitCore(process, cachePath, internalAssets, externalAssets string,
 	}
 	setupLog(int(maxLogSizeKb)*1024, filepath.Join(cachePath, "neko.log"), isBgProcess, !logEnable)
 
+	// 内置面板目录必须早于 box 启动就绪：官方内核 api 服务在目录缺失或为空时会去
+	// GitHub 下载面板覆盖内置文件，并转入每日自动更新（service/api/dashboard.go）。
+	// extractAssets 跑在 goroutine 且排在 geoip/geosite 之后，赶不上 box 启动。
+	if isBgProcess {
+		if err := extractAssetName(dashboardDstFolder, intfNB4A.UseOfficialAssets()); err != nil {
+			log.Println("Extract", dashboardDstFolder, "failed:", err)
+		}
+	}
+
 	// Set up some component
 	go func() {
 		defer device.DeferPanicToError("InitCore-go", func(err error) { log.Println(err) })

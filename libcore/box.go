@@ -425,8 +425,8 @@ func (b *BoxInstance) SelectOutbound(tag string) bool {
 	if b.selector != nil {
 		if b.selector.SelectOutbound(tag) {
 			// 替代 fork 的 nekoutils.Selector_OnProxySelected 钩子。
-			// 注意：仅覆盖 app 内的切换路径；通过 Clash API（yacd 面板）
-			// 切换不会触发该回调（官方内核无此钩子，待有具体案例再修）。
+			// 注意：仅覆盖 app 内的切换路径；通过 Clash API 或 sing-box API
+			// （面板等外部客户端）切换不会触发该回调（官方内核无此钩子，待有具体案例再修）。
 			if intfNB4A != nil {
 				intfNB4A.Selector_OnProxySelected(b.selector.Tag(), tag)
 			}

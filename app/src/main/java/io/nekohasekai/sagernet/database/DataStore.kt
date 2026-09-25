@@ -280,7 +280,8 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var tunImplementation by configurationStore.stringToInt(Key.TUN_IMPLEMENTATION) { TunImplementation.SING_TUN }
     var profileTrafficStatistics by configurationStore.boolean(Key.PROFILE_TRAFFIC_STATISTICS) { true }
 
-    var yacdURL by configurationStore.string("yacdURL") { "http://127.0.0.1:9090/ui" }
+    /** 面板地址，默认指向内核 api 服务提供的官方 sing-box dashboard。 */
+    var panelURL by configurationStore.string("panelURL") { "http://127.0.0.1:9091/dashboard/" }
 
     // protocol
 

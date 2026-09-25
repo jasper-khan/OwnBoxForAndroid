@@ -30,7 +30,7 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
 
         // layout
         toolbar.setTitle(R.string.menu_dashboard)
-        toolbar.inflateMenu(R.menu.yacd_menu)
+        toolbar.inflateMenu(R.menu.dashboard_menu)
         toolbar.setOnMenuItemClickListener(this)
 
         val binding = LayoutWebviewBinding.bind(view)
@@ -51,7 +51,7 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
                 super.onPageFinished(view, url)
             }
         }
-        mWebView.loadUrl(DataStore.yacdURL)
+        mWebView.loadUrl(DataStore.panelURL)
 
         if (!DataStore.serviceState.connected) {
             Snackbar.make(view, "提示：请先连接代理服务以获取实时仪表盘数据", Snackbar.LENGTH_LONG).show()
@@ -87,13 +87,13 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
             R.id.action_set_url -> {
                 val view = EditText(context).apply {
                     inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-                    setText(DataStore.yacdURL)
+                    setText(DataStore.panelURL)
                 }
                 MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.set_panel_url)
                     .setView(view)
                     .setPositiveButton(android.R.string.ok) { _, _ ->
-                        DataStore.yacdURL = view.text.toString()
-                        mWebView.loadUrl(DataStore.yacdURL)
+                        DataStore.panelURL = view.text.toString()
+                        mWebView.loadUrl(DataStore.panelURL)
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()

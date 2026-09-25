@@ -40,6 +40,7 @@ import (
 	"github.com/sagernet/sing-box/protocol/vless"
 	"github.com/sagernet/sing-box/protocol/vmess"
 	"github.com/sagernet/sing-box/protocol/wireguard"
+	"github.com/sagernet/sing-box/service/api"
 
 	"libcore/protocol/juicity"
 	"libcore/protocol/loadbalance"
@@ -150,6 +151,9 @@ func nekoboxAndroidDNSTransportRegistry(localTransport LocalDNSTransport) *dns.T
 
 func nekoboxAndroidServiceRegistry() *service.Registry {
 	registry := service.NewRegistry()
+
+	// 官方 sing-box dashboard 依赖 1.14+ 的 api 服务：gRPC-Web 接口 + /dashboard/ 静态面板
+	api.RegisterService(registry)
 
 	return registry
 }

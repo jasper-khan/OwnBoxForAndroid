@@ -651,6 +651,19 @@ fun buildConfig(
     }
 
     return MyOptions().apply {
+        // 官方 sing-box dashboard：走 1.14+ 的 api 服务（gRPC-Web），面板文件由 APK
+        // 内置解压到 files/dashboard；Clash API 保留给流量图表/连接诊断/局域网共享。
+        if (!forTest && (DataStore.enableClashAPI || DataStore.allowAccess)) {
+            _hack_config_map["services"] = listOf(
+                mapOf(
+                    "type" to "api",
+                    "listen" to "127.0.0.1",
+                    "listen_port" to 9091,
+                    "dashboard" to "../files/dashboard",
+                )
+            )
+        }
+
         // forTest 不配 experimental：Go 侧 NewTestSingBoxInstance 不注册
         // PlatformLogWriter，官方内核据此不再强制创建 CacheFile/ClashServer
         // （官方 box.go 的 needCacheFile/needClashAPI 分支），测速完全不产生
@@ -666,7 +679,6 @@ fun buildConfig(
                 if (DataStore.enableClashAPI || DataStore.allowAccess) {
                     clash_api = ClashAPIOptions().apply {
                         external_controller = "127.0.0.1:9090"
-                        external_ui = "../files/yacd"
                     }
                     if (DataStore.enableObservability) {
                         observability = ObservabilityOptions().apply { enabled = true }

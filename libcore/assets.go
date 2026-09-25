@@ -6,8 +6,9 @@ const (
 	geoipVersion   = "geoip.version.txt"
 	geositeVersion = "geosite.version.txt"
 
-	yacdDstFolder = "yacd"
-	yacdVersion   = "yacd.version.txt"
+	// 官方 sing-box dashboard，由 sing-box api 服务在 /dashboard/ 提供
+	dashboardDstFolder = "dashboard"
+	dashboardVersion   = "dashboard.version.txt"
 )
 
 var apkAssetPrefixSingBox = "sing-box/"

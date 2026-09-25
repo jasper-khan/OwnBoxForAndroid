@@ -19,13 +19,13 @@ func extractAssets() {
 	extract := func(name string) {
 		err := extractAssetName(name, useOfficialAssets)
 		if err != nil {
-			log.Println("Extract", geoipDat, "failed:", err)
+			log.Println("Extract", name, "failed:", err)
 		}
 	}
 
 	extract(geoipDat)
 	extract(geositeDat)
-	extract(yacdDstFolder)
+	extract(dashboardDstFolder)
 }
 
 // 这里解压的是 apk 里面的
@@ -43,8 +43,8 @@ func extractAssetName(name string, useOfficialAssets bool) error {
 	case geositeDat:
 		version = geositeVersion
 		apkPrefix = apkAssetPrefixSingBox
-	case yacdDstFolder:
-		version = yacdVersion
+	case dashboardDstFolder:
+		version = dashboardVersion
 		replaceable = false
 	}
 
@@ -139,19 +139,24 @@ func extractAssetName(name string, useOfficialAssets bool) error {
 
 	if f, err := asset.Open(apkPrefix + name + ".xz"); err == nil {
 		extractXz(f)
-	} else if f, err := asset.Open("yacd.zip"); err == nil {
+	} else if f, err := asset.Open(name + ".zip"); err == nil {
 		os.RemoveAll(dstName)
 		extracZip(f, internalAssetsPath)
-		m, err := filepath.Glob(internalAssetsPath + "/Yacd-*")
+		// GitHub 归档 zip 的顶层目录为 <repo>-gh-pages，解压后改名为目标目录
+		m, err := filepath.Glob(internalAssetsPath + "/*-gh-pages")
 		if err != nil {
-			return fmt.Errorf("glob Yacd: %v", err)
+			return fmt.Errorf("glob %s archive: %v", name, err)
 		}
 		if len(m) != 1 {
-			return fmt.Errorf("glob Yacd found %d result, expect 1", len(m))
+			return fmt.Errorf("glob %s archive found %d result, expect 1", name, len(m))
 		}
 		err = os.Rename(m[0], dstName)
 		if err != nil {
-			return fmt.Errorf("rename Yacd: %v", err)
+			return fmt.Errorf("rename %s archive: %v", name, err)
+		}
+		if name == dashboardDstFolder {
+			// 内置面板已从 yacd 换成官方 dashboard，随首次解压清掉旧面板残留目录
+			os.RemoveAll(internalAssetsPath + "yacd")
 		}
 
 	} // TODO normal file
