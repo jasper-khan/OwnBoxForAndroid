@@ -298,6 +298,9 @@ fun Fragment.startFilesForResult(
 }
 
 fun Fragment.needReload() {
+    // 可能从延迟回调（如清除缓存后的 Handler）进来，此时 Fragment 已经 detach，
+    // 直接跳过，避免 getString/requireContext 抛 IllegalStateException 崩溃。
+    if (!isAdded) return
     if (DataStore.serviceState.started) {
         snackbar(getString(R.string.need_reload)).setAction(R.string.apply) {
             SagerNet.restartService()
