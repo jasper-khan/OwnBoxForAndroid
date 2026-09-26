@@ -1830,7 +1830,7 @@ fun buildConfig(
             dns.rules.add(DNSRule_DefaultOptions().apply {
                 query_type = if (ipv6Mode == IPv6Mode.DISABLE) listOf("A") else listOf("A", "AAAA")
                 server = "fakeip"
-                rewrite_ttl = 1
+                rewrite_ttl = 300
             })
         }
 
