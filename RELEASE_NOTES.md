@@ -1,5 +1,5 @@
-# OwnBox v2.8.23-preview 预览版
+# OwnBox v2.8.24-preview 预览版
 
-- 内核换成 OwnBox 自己的 sing-box 分支（基于 reF1nd `v1.15.0-alpha.8-reF1nd`，只加不改，reF1nd 原有功能一个不删）。
-- 新增内核选项 `route.default_concurrent_dial`：把域名解析出的所有地址（IPv4/IPv6）同时拨号，谁先连通用谁，对标 mihomo 的 `tcp-concurrent`。
-- 核心设置新增“并发拨号（多 IP 同时连接）”开关；覆盖直连目标域名、节点服务器域名与 DNS 服务器域名，TCP 与 UDP 都生效。
+- 修复"安装更新 / 强杀 App 后部分 App 上不了网"：fakeip 的域名↔假 IP 映射以前是攒批写盘（内核只在第 1 个映射、每 1024 个映射、攒够 1MB 或正常停止时落盘），被系统杀掉进程时内存里那批映射会丢，重启后客户端手里还留着的 198.18.x.x 无法还原成域名，只能一直重连失败。
+- 现在 `cache_file.flush_interval = "1s"`：有新映射时每秒提交一次，空闲不写盘。本地实测同一场景：不设置时 600 个映射落盘 0 个，设为 1s 后 600/600 落盘（单次提交约 5ms，600 条约 98KB）。
+- 内核未变（仍为 `v1.15.0-alpha.8-ownbox.1`），只调整 App 生成的配置。

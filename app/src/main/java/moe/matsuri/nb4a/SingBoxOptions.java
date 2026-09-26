@@ -410,6 +410,10 @@ public class SingBoxOptions {
 
         public String cache_id;
 
+        // OwnBox: 待写缓存提交间隔（如 "1s"）。不设置时内核只在少数时机落盘，
+        // 被安装更新/强杀时内存里未提交的 fakeip 映射会丢。
+        public String flush_interval;
+
     }
 
     public static class HysteriaInboundOptions extends SingBoxOption {
