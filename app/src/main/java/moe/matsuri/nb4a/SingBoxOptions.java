@@ -1136,6 +1136,9 @@ public class SingBoxOptions {
         public Boolean default_concurrent_dial;
 
         public String default_domain_resolver;
+
+        // sing-box 1.15: 域名匹配策略，as_is / prefer_fqdn / prefer_sniffhost
+        public String default_domain_match_strategy;
     }
 
 

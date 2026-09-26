@@ -787,6 +787,9 @@ fun buildConfig(
                 default_concurrent_dial = true
             }
 
+            // 域名规则优先匹配连接目标域名，避免被嗅探出的域名带偏
+            default_domain_match_strategy = "prefer_fqdn"
+
         }
 
         // returns outbound tag
