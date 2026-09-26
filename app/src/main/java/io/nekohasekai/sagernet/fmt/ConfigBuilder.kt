@@ -49,7 +49,6 @@ import moe.matsuri.nb4a.proxy.shadowtls.buildSingBoxOutboundShadowTLSBean
 import moe.matsuri.nb4a.utils.JavaUtil.gson
 import moe.matsuri.nb4a.utils.Util
 import moe.matsuri.nb4a.utils.listByLineOrComma
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 const val TAG_MIXED = "mixed-in"
 
@@ -1582,17 +1581,7 @@ fun buildConfig(
             }
         }
 
-        remoteDns.forEach {
-            var address = it
-            if (address.contains("://")) {
-                address = address.substringAfter("://")
-            }
-            "https://$address".toHttpUrlOrNull()?.apply {
-                if (!host.isIpAddress()) {
-                    domainListDNSDirectForce.add("full:$host")
-                }
-            }
-        }
+        // 远程 DNS 服务器域名不进本规则：其解析由 transport 的 domain_resolver（dns-remote_bootstrap）负责。
 
         fun addDnsServerGroup(
             addresses: List<String>, tag: String, fallback: String, detour: String,
