@@ -747,8 +747,8 @@
     <string name="format_snlink_upper">SNLINK</string>
     <string name="format_snlink_lower">snlink</string>
     <string name="testing_node_speed">正在测试节点速度...</string>
-    <string name="concurrent_dial">并发拨号（多 IP 同时连接）</string>
-    <string name="concurrent_dial_summary">把域名解析出的所有 IP（IPv4/IPv6）同时拨号，谁先连通用谁；会增加同时发起的连接数。</string>
+    <string name="concurrent_dial">TCP 并发</string>
+    <string name="concurrent_dial_summary">启用 TCP 并发连接，将会使用 dns 解析出的所有 IP 地址进行连接，使用第一个成功的连接</string>
     <string name="amoled_theme">AMOLED 纯黑模式</string>
     <string name="amoled_theme_summary">深色模式下使用纯黑背景以最大程度节省 OLED 屏幕耗电</string>
     <string name="import_clipboard_prompt">检测到剪贴板中存在节点配置或订阅链接，是否立即导入？</string>
