@@ -1604,11 +1604,11 @@ fun buildConfig(
         }
 
         // 引导 DNS 组：并发查询组内成员，取最先成功的响应。
-        // 仅用于解析 dns-direct / dns-remote 组内服务器自身的域名；成员固定直连，且自身是 IP 无需再解析。
-        fun addBootstrapDnsGroup(tag: String, addresses: List<String>) {
+        // 用于解析 dns-direct / dns-remote 组内服务器自身的域名；成员自身是 IP，无需再解析。
+        fun addBootstrapDnsGroup(tag: String, addresses: List<String>, detour: String) {
             val memberTags = addresses.indices.map { "$tag-${it + 1}" }
             addresses.forEachIndexed { index, address ->
-                dns.servers.add(buildDnsServer(address, memberTags[index], TAG_DIRECT))
+                dns.servers.add(buildDnsServer(address, memberTags[index], detour))
             }
             dns.servers.add(DNSServerOptions().apply {
                 type = "group"
@@ -1617,8 +1617,9 @@ fun buildConfig(
             })
         }
 
-        addBootstrapDnsGroup("dns-direct_bootstrap", listOf("223.5.5.5", "119.29.29.29"))
-        addBootstrapDnsGroup("dns-remote_bootstrap", listOf("1.1.1.1", "8.8.8.8"))
+        addBootstrapDnsGroup("dns-direct_bootstrap", listOf("223.5.5.5", "119.29.29.29"), TAG_DIRECT)
+        // 远程组跟随当前节点出站，避免明文 UDP 查询落回本机网络被劫持/污染
+        addBootstrapDnsGroup("dns-remote_bootstrap", listOf("1.1.1.1", "8.8.8.8"), mainProxyTag)
 
         addDnsServerGroup(
             directDNS, "dns-direct", "https://223.5.5.5/dns-query", TAG_DIRECT,

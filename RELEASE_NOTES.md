@@ -1,3 +1,7 @@
 ## 变更
 
-- 「强制 dns-direct」DNS 规则不再包含远程 DNS 服务器域名；远程 DNS（含自定义远程 DoH 域名）的解析由 `dns-remote_bootstrap` 并发组负责。
+- `dns-remote_bootstrap` 组（1.1.1.1、8.8.8.8）改为跟随当前节点出站，不再直连。
+
+## 注意事项
+
+- 该组使用 UDP 查询，节点需支持 UDP 转发。
