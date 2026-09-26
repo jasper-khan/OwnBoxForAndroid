@@ -677,9 +677,6 @@ fun buildConfig(
                     // fakeip 的域名↔IP 映射必须落盘：内核重建（升级/重启/重连）后内存映射全丢，
                     // 系统和应用里还留着的 198.18.x.x 就还原不回域名，表现为"升级后没网"。
                     store_fakeip = true
-                    // 内核默认只在"第 1 个映射、每 1024 个映射、攒够 1MB、正常停止"时落盘，
-                    // 被安装更新/强杀时内存里那批映射会丢；1s 让新映射每秒提交一次（空闲不写）。
-                    flush_interval = "1s"
                 }
 
                 if (DataStore.enableClashAPI || DataStore.allowAccess) {

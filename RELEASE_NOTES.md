@@ -1,5 +1,4 @@
-# OwnBox v2.8.24-preview 预览版
+# OwnBox v2.8.25-preview 预览版
 
-- 修复"安装更新 / 强杀 App 后部分 App 上不了网"：fakeip 的域名↔假 IP 映射以前是攒批写盘（内核只在第 1 个映射、每 1024 个映射、攒够 1MB 或正常停止时落盘），被系统杀掉进程时内存里那批映射会丢，重启后客户端手里还留着的 198.18.x.x 无法还原成域名，只能一直重连失败。
-- 现在 `cache_file.flush_interval = "1s"`：有新映射时每秒提交一次，空闲不写盘。本地实测同一场景：不设置时 600 个映射落盘 0 个，设为 1s 后 600/600 落盘（单次提交约 5ms，600 条约 98KB）。
-- 内核未变（仍为 `v1.15.0-alpha.8-ownbox.1`），只调整 App 生成的配置。
+- 回退 v2.8.24-preview 的 `cache_file.flush_interval = "1s"`：fakeip 映射恢复内核默认的攒批写盘行为，`SingBoxOptions.CacheFile` 的字段和 ConfigBuilder 里的配置项都已移除。
+- 其余不变：并发拨号（`route.default_concurrent_dial`）与内核 `v1.15.0-alpha.8-ownbox.1` 均未改动。
