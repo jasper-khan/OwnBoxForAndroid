@@ -3,19 +3,27 @@ package io.nekohasekai.sagernet.ui
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.text.InputType
+import android.util.Base64
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import android.widget.EditText
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.Toolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import io.nekohasekai.sagernet.BuildConfig
 import io.nekohasekai.sagernet.R
+import io.nekohasekai.sagernet.SagerNet
 import io.nekohasekai.sagernet.database.DataStore
 import io.nekohasekai.sagernet.databinding.LayoutWebviewBinding
 import io.nekohasekai.sagernet.ktx.Logs
+import io.nekohasekai.sagernet.ktx.readableMessage
+import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
+import io.nekohasekai.sagernet.ktx.runOnMainDispatcher
+import io.nekohasekai.sagernet.ktx.safeSnackbar
+import io.nekohasekai.sagernet.ktx.startFilesForResult
 import moe.matsuri.nb4a.utils.WebViewUtil
 
 // Fragment必须有一个无参public的构造函数，否则在数据恢复的时候，会报crash
@@ -25,6 +33,50 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
     lateinit var mWebView: WebView
 
     private var panelServerSeeded = false
+    private var localPanelLoaded = false
+    private var pendingPanelFile: ByteArray? = null
+
+    /**
+     * 官方 dashboard 的「日志 - 保存 - 到文件」是 blob: + a[download] 触发的下载，
+     * WebView 自己不会落盘，这里把内容接回来交给系统文件选择器保存。
+     */
+    private val savePanelFile =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+            val bytes = pendingPanelFile
+            pendingPanelFile = null
+            if (uri == null || bytes == null) return@registerForActivityResult
+            runOnDefaultDispatcher {
+                try {
+                    val resolver = (context ?: SagerNet.application).contentResolver
+                    resolver.openOutputStream(uri)!!.use { it.write(bytes) }
+                    runOnMainDispatcher { if (isAdded) safeSnackbar(R.string.action_export_msg) }
+                } catch (e: Exception) {
+                    Logs.w(e)
+                    runOnMainDispatcher { if (isAdded) safeSnackbar(e.readableMessage) }
+                }
+            }
+        }
+
+    /** 面板 JS 通过这个接口把导出内容交回 App，只对本机面板生效。 */
+    inner class PanelFileBridge {
+
+        @JavascriptInterface
+        fun saveFile(name: String, base64: String) {
+            if (!localPanelLoaded) return
+            val bytes = try {
+                Base64.decode(base64, Base64.DEFAULT)
+            } catch (e: Exception) {
+                Logs.w("Failed to decode panel file: ${e.message}")
+                return
+            }
+            val fileName = name.substringAfterLast('/').substringAfterLast('\\')
+                .ifBlank { "ownbox-panel.txt" }.take(120)
+            pendingPanelFile = bytes
+            runOnMainDispatcher {
+                if (isAdded) startFilesForResult(savePanelFile, fileName)
+            }
+        }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -42,6 +94,7 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
         mWebView = binding.webview
         mWebView.settings.domStorageEnabled = true
         mWebView.settings.javaScriptEnabled = true
+        mWebView.addJavascriptInterface(PanelFileBridge(), PANEL_FILE_BRIDGE)
         mWebView.webViewClient = object : WebViewClient() {
             override fun onReceivedError(
                 view: WebView?, request: WebResourceRequest?, error: WebResourceError?
@@ -51,7 +104,9 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
+                localPanelLoaded = url?.startsWith(LOCAL_PANEL_PREFIX) == true
                 seedPanelServer(view, url)
+                injectPanelDownloadHook(view, url)
             }
         }
         migrateLegacyPanelUrl()
@@ -123,6 +178,12 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
         }
     }
 
+    /** 面板导出是 JS 生成的 blob，WebView 不会自己下载，注入钩子把内容交给 App 保存。 */
+    private fun injectPanelDownloadHook(webView: WebView?, url: String?) {
+        if (webView == null || url?.startsWith(LOCAL_PANEL_PREFIX) != true) return
+        webView.evaluateJavascript(PANEL_DOWNLOAD_HOOK_JS, null)
+    }
+
     /** 上一个预览版把面板放在 9091，换到 9090 后自动迁移默认地址，避免打开是 404。 */
     private fun migrateLegacyPanelUrl() {
         if (DataStore.panelURL == LEGACY_PANEL_URL) {
@@ -135,6 +196,7 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
         private const val DEFAULT_PANEL_URL = "http://127.0.0.1:9090/dashboard/"
         private const val LEGACY_PANEL_URL = "http://127.0.0.1:9091/dashboard/"
         private const val LOCAL_PANEL_PREFIX = "http://127.0.0.1:9090/dashboard"
+        private const val PANEL_FILE_BRIDGE = "OwnBoxPanel"
 
         // 官方 dashboard 的服务器列表存在 localStorage["servers"]，url 不带协议（见其 re()/k()）
         private val SEED_PANEL_SERVER_JS = """
@@ -149,6 +211,56 @@ class WebviewFragment : ToolbarFragment(R.layout.layout_webview), Toolbar.OnMenu
                 } catch (e) {
                     return '0';
                 }
+            })()
+        """.trimIndent()
+
+        /**
+         * 面板「保存 - 到文件」用 URL.createObjectURL + a[download].click() 触发，
+         * WebView 既不下载也不会回调 DownloadListener，所以在这里接管：
+         * 记住 blob、延迟 revoke（面板在 click 后立刻 revoke），把内容转 base64 交回 App。
+         */
+        private val PANEL_DOWNLOAD_HOOK_JS = """
+            (function () {
+                if (window.__ownboxPanelDownloadHook) return '0';
+                window.__ownboxPanelDownloadHook = true;
+                var blobs = {};
+                var createObjectURL = URL.createObjectURL;
+                var revokeObjectURL = URL.revokeObjectURL;
+                URL.createObjectURL = function (blob) {
+                    var url = createObjectURL.call(URL, blob);
+                    blobs[url] = blob;
+                    return url;
+                };
+                URL.revokeObjectURL = function (url) {
+                    setTimeout(function () {
+                        delete blobs[url];
+                        try { revokeObjectURL.call(URL, url); } catch (e) {}
+                    }, 60000);
+                };
+                function save(name, blob) {
+                    var reader = new FileReader();
+                    reader.onload = function () {
+                        var result = String(reader.result || '');
+                        var data = result.substring(result.indexOf(',') + 1);
+                        try { OwnBoxPanel.saveFile(name || 'ownbox-panel.txt', data); } catch (e) {}
+                    };
+                    reader.readAsDataURL(blob);
+                }
+                var click = HTMLAnchorElement.prototype.click;
+                HTMLAnchorElement.prototype.click = function () {
+                    var name = this.getAttribute('download');
+                    var href = this.getAttribute('href') || '';
+                    if (name && blobs[href]) {
+                        save(name, blobs[href]);
+                        return;
+                    }
+                    if (name && href.indexOf(';base64,') > 0) {
+                        try { OwnBoxPanel.saveFile(name, href.substring(href.indexOf(',') + 1)); } catch (e) {}
+                        return;
+                    }
+                    return click.apply(this, arguments);
+                };
+                return '1';
             })()
         """.trimIndent()
     }
