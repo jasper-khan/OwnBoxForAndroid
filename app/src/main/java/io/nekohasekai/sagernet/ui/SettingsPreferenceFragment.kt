@@ -23,6 +23,9 @@ import io.nekohasekai.sagernet.ktx.*
 import io.nekohasekai.sagernet.utils.AppLocale
 import io.nekohasekai.sagernet.utils.Theme
 import moe.matsuri.nb4a.ui.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
@@ -457,6 +460,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
 
     private fun clearAppCache() {
         try {
+            flushDnsAndFakeIPCache()
             val cacheDir = SagerNet.application.cacheDir
             clearDirFiles(cacheDir, skipFiles = setOf("neko.log"))
             
@@ -474,6 +478,24 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
         } catch (e: Exception) {
             Toast.makeText(requireContext(), getString(R.string.clear_cache_failed, e.message), Toast.LENGTH_SHORT).show()
             e.printStackTrace()
+        }
+    }
+
+    // 内核 Clash API 原生 flush：dns 清内存 DNS 缓存，fakeip 同时清内存与 cache.db 映射。
+    private fun flushDnsAndFakeIPCache() {
+        if (!DataStore.serviceState.started) return
+        if (!DataStore.enableClashAPI && !DataStore.allowAccess) return
+        runOnIoDispatcher {
+            val client = OkHttpClient()
+            for (endpoint in listOf("dns", "fakeip")) {
+                runCatching {
+                    val request = Request.Builder()
+                        .url("http://127.0.0.1:9091/cache/$endpoint/flush")
+                        .post(ByteArray(0).toRequestBody())
+                        .build()
+                    client.newCall(request).execute().close()
+                }
+            }
         }
     }
 
