@@ -1594,12 +1594,6 @@ fun buildConfig(
             }
         }
 
-        dns.servers.add(DNSServerOptions().apply {
-            type = "local"
-            tag = "dns-local"
-            detour = TAG_DIRECT
-        })
-
         fun addDnsServerGroup(
             addresses: List<String>, tag: String, fallback: String, detour: String,
             domainResolver: String, domainStrategy: String?, normalize: (String) -> String
@@ -1620,14 +1614,31 @@ fun buildConfig(
             })
         }
 
+        // 引导 DNS 组：并发查询组内成员，取最先成功的响应。
+        // 仅用于解析 dns-direct / dns-remote 组内服务器自身的域名；成员固定直连，且自身是 IP 无需再解析。
+        fun addBootstrapDnsGroup(tag: String, addresses: List<String>) {
+            val memberTags = addresses.indices.map { "$tag-${it + 1}" }
+            addresses.forEachIndexed { index, address ->
+                dns.servers.add(buildDnsServer(address, memberTags[index], TAG_DIRECT))
+            }
+            dns.servers.add(DNSServerOptions().apply {
+                type = "group"
+                this.tag = tag
+                this.servers = memberTags
+            })
+        }
+
+        addBootstrapDnsGroup("dns-direct_bootstrap", listOf("223.5.5.5", "119.29.29.29"))
+        addBootstrapDnsGroup("dns-remote_bootstrap", listOf("1.1.1.1", "8.8.8.8"))
+
         addDnsServerGroup(
             directDNS, "dns-direct", "https://223.5.5.5/dns-query", TAG_DIRECT,
-            "dns-local", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-direct")),
+            "dns-direct_bootstrap", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-direct")),
             ::normalizeDnsAddress
         )
         addDnsServerGroup(
             remoteDns, "dns-remote", "https://dns.google/dns-query", mainProxyTag,
-            "dns-direct", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-remote")),
+            "dns-remote_bootstrap", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-remote")),
             ::normalizeRemoteDnsAddress
         )
         if (dnsHosts.isNotEmpty()) {
