@@ -39,6 +39,7 @@ import (
 type boxPlatformInterfaceWrapper struct {
 	networkManager adapter.NetworkManager
 	myTunName      string
+	myTunAddress   []netip.Addr
 	diagnosticID   uint64
 	diagnosticTag  string
 	isURLTest      bool
@@ -126,6 +127,7 @@ func (w *boxPlatformInterfaceWrapper) OpenInterface(options *tun.Options, platfo
 	//
 	options.FileDescriptor = int(tunFd)
 	w.myTunName = options.Name
+	w.myTunAddress = myTunAddress(options)
 	return tun.New(*options)
 }
 
@@ -275,8 +277,24 @@ func (w *boxPlatformInterfaceWrapper) CancelNotification(identifier string, type
 	return nil
 }
 
+// myTunAddress 对齐官方 libbox（experimental/libbox/service.go 的 myTunAddress）：
+// 记下 TUN 自身的本地地址。内核 route 靠 MyInterfaceAddress 判定
+// “来源是不是本机”（route/process_cache.go isLocalSource），
+// 返回 nil 会让 172.19.0.1 来源的 TUN 连接被当成外部地址，
+// 进程/UID 查询直接被跳过，应用（user_id）规则永远命中不了。
+func myTunAddress(options *tun.Options) []netip.Addr {
+	addresses := make([]netip.Addr, 0, len(options.Inet4Address)+len(options.Inet6Address))
+	for _, prefix := range options.Inet4Address {
+		addresses = append(addresses, prefix.Addr())
+	}
+	for _, prefix := range options.Inet6Address {
+		addresses = append(addresses, prefix.Addr())
+	}
+	return addresses
+}
+
 func (w *boxPlatformInterfaceWrapper) MyInterfaceAddress() []netip.Addr {
-	return nil
+	return w.myTunAddress
 }
 
 func (w *boxPlatformInterfaceWrapper) UsePlatformNeighborResolver() bool {
