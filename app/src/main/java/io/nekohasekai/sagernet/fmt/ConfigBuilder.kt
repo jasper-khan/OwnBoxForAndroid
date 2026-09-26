@@ -58,6 +58,7 @@ const val TAG_BYPASS = "bypass"
 const val TAG_BLOCK = "block"
 const val TAG_FRAGMENT = "fragment"
 const val TAG_DNS_HOSTS = "dns-hosts"
+const val TAG_DNS_PROXY = "dns-proxy"
 
 const val LOCALHOST = "127.0.0.1"
 
@@ -292,6 +293,73 @@ private fun parseDnsHosts(value: String): Map<String, List<String>> {
     return hosts.mapValues { (_, addresses) -> addresses.distinct() }
 }
 
+private val builtinDnsHosts = mapOf(
+    "doh.pub" to listOf("1.12.12.12", "120.53.53.53"),
+    "dns.google" to listOf(
+        "8.8.8.8",
+        "8.8.4.4",
+        "2001:4860:4860::8888",
+        "2001:4860:4860::8844"
+    ),
+    "cloudflare-dns.com" to listOf(
+        "104.16.249.249",
+        "104.16.248.249",
+        "2606:4700::6810:f8f9",
+        "2606:4700::6810:f9f9"
+    ),
+    "dns.alidns.com" to listOf(
+        "223.5.5.5",
+        "223.6.6.6",
+        "2400:3200::1",
+        "2400:3200:baba::1"
+    ),
+    "doh.360.cn" to listOf("101.226.4.6", "218.30.118.6"),
+    "doh.opendns.com" to listOf("208.67.222.222", "208.67.220.220"),
+    "tencentcloud.124212397.xyz" to listOf("159.75.151.123"),
+    "one.one.one.one" to listOf(
+        "1.1.1.1",
+        "1.0.0.1",
+        "2606:4700:4700::1111",
+        "2606:4700:4700::1001"
+    ),
+    "1dot1dot1dot1.cloudflare-dns.com" to listOf(
+        "1.1.1.1",
+        "1.0.0.1",
+        "2606:4700:4700::1111",
+        "2606:4700:4700::1001"
+    ),
+    "dns.cloudflare.com" to listOf(
+        "104.16.132.229",
+        "104.16.133.229",
+        "2606:4700::6810:84e5",
+        "2606:4700::6810:85e5"
+    ),
+    "dot.pub" to listOf("1.12.12.12", "120.53.53.53"),
+    "dns.quad9.net" to listOf(
+        "9.9.9.9",
+        "149.112.112.112",
+        "2620:fe::fe",
+        "2620:fe::9"
+    ),
+    "dns.yandex.net" to listOf(
+        "77.88.8.8",
+        "77.88.8.1",
+        "2a02:6b8::feed:0ff",
+        "2a02:6b8:0:1::feed:0ff"
+    ),
+    "dns.sb" to listOf("185.222.222.222", "2a09::"),
+    "engage.cloudflareclient.com" to listOf(
+        "162.159.192.1",
+        "2606:4700:d0::a29f:c001"
+    ),
+    "dns.adguard.com" to listOf(
+        "94.140.14.14",
+        "94.140.15.15",
+        "2a10:50c0::ad1:ff",
+        "2a10:50c0::ad2:ff"
+    )
+)
+
 private fun serverHostOf(bean: AbstractBean): String? {
     val fallback = bean.serverAddress?.takeIf { it.isNotBlank() }
     if (bean is ConfigBean) {
@@ -398,6 +466,8 @@ fun buildConfig(
     val directDNS = DataStore.directDns.split("\n")
         .mapNotNull { dns -> dns.trim().takeIf { it.isNotBlank() && !it.startsWith("#") } }
     val dnsHosts by lazy { parseDnsHosts(DataStore.dnsHosts) }
+    // 用户域名重写优先于内置 hosts；自定义 DNS 服务器域名也可由此走 hosts。
+    val dnsResolverHosts by lazy { builtinDnsHosts + dnsHosts }
     val enableDnsRouting = DataStore.enableDnsRouting
     val useFakeDns = DataStore.enableFakeDns && !forTest
     // reF1nd 核心使用独立规则动作覆盖嗅探到的目标地址。
@@ -540,13 +610,20 @@ fun buildConfig(
         domainResolver: String? = null,
         domainStrategy: String? = null
     ): DNSServerOptions {
-        fun resolverForHost(host: String): DomainResolveOptions? =
-            domainResolver?.takeIf { !host.isIpAddress() }?.let { resolver ->
+        fun resolverForHost(host: String): DomainResolveOptions? {
+            if (host.isIpAddress()) return null
+            val resolver = if (dnsResolverHosts.containsKey(host.lowercase().removeSuffix("."))) {
+                "hosts"
+            } else {
+                domainResolver
+            }
+            return resolver?.let {
                 DomainResolveOptions().apply {
-                    server = resolver
+                    server = it
                     strategy = domainStrategy
                 }
             }
+        }
 
         val trimmed = address.trim()
         if (trimmed == "local" || trimmed == "hosts") {
@@ -1155,7 +1232,7 @@ fun buildConfig(
                     // 域名解析策略。曾强制空——测速解析出的 IP/协议族与真实路径不同。
                     if (defaultServerDomainStrategy.isNotEmpty()) {
                         _hack_config_map["domain_resolver"] = mapOf(
-                            "server" to "dns-direct",
+                            "server" to TAG_DNS_PROXY,
                             "strategy" to defaultServerDomainStrategy
                         )
                     }
@@ -1584,8 +1661,7 @@ fun buildConfig(
             }
         }
 
-        // 远程 DNS 服务器域名不进本规则：其解析由 transport 的 domain_resolver（dns-remote_bootstrap）负责。
-
+        // DNS 服务器域名优先走内置 hosts；未命中时直连组走 local，远程组走 dns-direct。
         fun addDnsServerGroup(
             addresses: List<String>, tag: String, fallback: String, detour: String,
             domainResolver: String, domainStrategy: String?, normalize: (String) -> String
@@ -1606,32 +1682,26 @@ fun buildConfig(
             })
         }
 
-        // 引导 DNS 组：并发查询组内成员，取最先成功的响应。
-        // 用于解析 dns-direct / dns-remote 组内服务器自身的域名；成员自身是 IP，无需再解析。
-        fun addBootstrapDnsGroup(tag: String, addresses: List<String>, detour: String) {
-            val memberTags = addresses.indices.map { "$tag-${it + 1}" }
-            addresses.forEachIndexed { index, address ->
-                dns.servers.add(buildDnsServer(address, memberTags[index], detour))
-            }
-            dns.servers.add(DNSServerOptions().apply {
-                type = "group"
-                this.tag = tag
-                this.servers = memberTags
-            })
-        }
-
-        addBootstrapDnsGroup("dns-direct_bootstrap", listOf("223.5.5.5", "119.29.29.29"), TAG_DIRECT)
-        // 远程组跟随当前节点出站，避免明文 UDP 查询落回本机网络被劫持/污染
-        addBootstrapDnsGroup("dns-remote_bootstrap", listOf("1.1.1.1", "8.8.8.8"), mainProxyTag)
+        dns.servers.add(DNSServerOptions().apply {
+            type = "hosts"
+            tag = "hosts"
+            _hack_config_map["predefined"] = dnsResolverHosts
+        })
+        dns.servers.add(DNSServerOptions().apply {
+            type = "local"
+            tag = "local"
+        })
+        // 节点服务器域名专用 DNS，对应 mihomo 的 proxy-server-nameserver
+        dns.servers.add(buildDnsServer("119.29.29.29", TAG_DNS_PROXY, TAG_DIRECT))
 
         addDnsServerGroup(
             directDNS, "dns-direct", "https://223.5.5.5/dns-query", TAG_DIRECT,
-            "dns-direct_bootstrap", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-direct")),
+            "local", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-direct")),
             ::normalizeDnsAddress
         )
         addDnsServerGroup(
             remoteDns, "dns-remote", "https://dns.google/dns-query", mainProxyTag,
-            "dns-remote_bootstrap", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-remote")),
+            "dns-direct", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-remote")),
             ::normalizeRemoteDnsAddress
         )
         if (dnsHosts.isNotEmpty()) {
@@ -1690,7 +1760,7 @@ fun buildConfig(
                 topRouteRules.add(Rule_DefaultOptions().apply {
                     port = listOf(80, 443, 3478, 5228, 8443)
                     action = "sniff"
-                    sniffer = listOf("http", "tls", "quic", "stun")
+                    sniffer = listOf("http", "tls", "quic", "stun", "dns")
                     timeout = "300ms"
                 })
             }
@@ -1794,6 +1864,14 @@ fun buildConfig(
                     server = "dns-direct"
                 })
             }
+            // 节点服务器域名解析之后，拒绝 SVCB/HTTPS/PTR 查询
+            dns.rules.add(
+                if (domainListDNSDirectForce.isNotEmpty()) 1 else 0,
+                DNSRule_DefaultOptions().apply {
+                    query_type = listOf("SVCB", "HTTPS", "PTR")
+                    action = "reject"
+                }
+            )
             perGroupResolver.forEach { (gid, resolver) ->
                 val hosts = perGroupServerHosts[gid]
                     ?.filter { it.isNotBlank() && isExclusiveCustomHost(it) }
