@@ -327,7 +327,7 @@
 
         <EditTextPreference
             app:defaultValue="119.29.29.29"
-            app:dialogMessage="@string/proxy_server_dns_message"
+            app:dialogMessage="@string/dns_servers_dialog_message"
             app:icon="@drawable/ic_action_dns"
             app:key="proxyServerDns"
             app:title="@string/proxy_server_dns"

@@ -452,7 +452,7 @@ fun buildConfig(
     val useAutoSelect = !forTest && !forExport && isGroupUrlTest
     val useLoadBalance = !forTest && !forExport && isGroupLoadBalance
     val userDNSRuleList = mutableListOf<DNSRule_DefaultOptions>()
-    val domainListDNSDirectForce = mutableListOf<String>()
+    val domainListDNSProxyForce = mutableListOf<String>()
     val bypassDNSBeans = hashSetOf<AbstractBean>()
     val perGroupResolver = HashMap<Long, String>()
     val perGroupServerHosts = HashMap<Long, MutableSet<String>>()
@@ -1230,18 +1230,17 @@ fun buildConfig(
 
                     pastEntity?.requireBean()?.apply {
                         // don't loopback
-                        if (defaultServerDomainStrategy != "" && !serverAddress.isIpAddress()) {
-                            domainListDNSDirectForce.add("full:$serverAddress")
+                        if (!serverAddress.isIpAddress()) {
+                            domainListDNSProxyForce.add("full:$serverAddress")
                         }
                     }
-                    // 测速配置必须与正式连接一致（对齐 husi）：沿用统一的服务器
-                    // 域名解析策略。曾强制空——测速解析出的 IP/协议族与真实路径不同。
+                    // 节点服务器域名固定走 dns-proxy（等价 mihomo proxy-server-nameserver）；
+                    // strategy 为空也必须指定 server，否则内核会回退到 route.default_domain_resolver（dns-direct）。
+                    val outboundDomainResolver = mutableMapOf<String, Any>("server" to TAG_DNS_PROXY)
                     if (defaultServerDomainStrategy.isNotEmpty()) {
-                        _hack_config_map["domain_resolver"] = mapOf(
-                            "server" to TAG_DNS_PROXY,
-                            "strategy" to defaultServerDomainStrategy
-                        )
+                        outboundDomainResolver["strategy"] = defaultServerDomainStrategy
                     }
+                    _hack_config_map["domain_resolver"] = outboundDomainResolver
 
                     _hack_config_map["tag"] = tagOut
 
@@ -1662,7 +1661,7 @@ fun buildConfig(
 
             if (!serverAddr.isIpAddress()) {
                 if (!isExclusiveCustomHost(serverAddr)) {
-                    domainListDNSDirectForce.add("full:${serverAddr}")
+                    domainListDNSProxyForce.add("full:${serverAddr}")
                 }
             }
         }
@@ -1869,16 +1868,16 @@ fun buildConfig(
                     query_type = listOf("A", "AAAA")
                 })
             }
-            // force bypass (always top DNS rule)
-            if (domainListDNSDirectForce.isNotEmpty()) {
+            // 节点服务器域名强制走 dns-proxy（等价 mihomo proxy-server-nameserver）
+            if (domainListDNSProxyForce.isNotEmpty()) {
                 dns.rules.add(0, DNSRule_DefaultOptions().apply {
-                    makeSingBoxRule(domainListDNSDirectForce.toHashSet().toList())
-                    server = "dns-direct"
+                    makeSingBoxRule(domainListDNSProxyForce.toHashSet().toList())
+                    server = TAG_DNS_PROXY
                 })
             }
             // 节点服务器域名解析之后，拒绝 SVCB/HTTPS/PTR 查询
             dns.rules.add(
-                if (domainListDNSDirectForce.isNotEmpty()) 1 else 0,
+                if (domainListDNSProxyForce.isNotEmpty()) 1 else 0,
                 DNSRule_DefaultOptions().apply {
                     query_type = listOf("SVCB", "HTTPS", "PTR")
                     action = "reject"
