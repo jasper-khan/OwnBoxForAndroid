@@ -59,27 +59,25 @@ class SagerNet : Application(),
 
         if (isMainProcess || isBgProcess) {
             externalAssets.mkdirs()
-            // 旧版本把 cache.db 放在可被系统清理的 cacheDir；迁到 no_backup 后，
-            // 保留已有目标文件，只在目标不存在时迁移旧文件，避免丢失 fakeip 映射。
-            if (isBgProcess) {
-                val oldCacheDb = File(cacheDir, "cache.db")
-                val persistentCacheDb = File(noBackupFilesDir, "cache.db")
-                if (!persistentCacheDb.exists() && oldCacheDb.exists()) {
-                    runCatching { oldCacheDb.renameTo(persistentCacheDb) }
-                        .onSuccess { migrated ->
-                            if (migrated) {
-                                android.util.Log.i("SagerNet", "Migrated cache.db to persistent storage")
-                            } else {
-                                android.util.Log.w("SagerNet", "Failed to migrate cache.db to persistent storage")
-                            }
+            // 2.8.37 将 cache.db 移到了 no_backup。回退到 cacheDir 前先迁回，
+            // 避免升级安装后丢掉已有的 FakeIP 映射。
+            val oldCacheDb = File(cacheDir, "cache.db")
+            val persistentCacheDb = File(noBackupFilesDir, "cache.db")
+            if (!oldCacheDb.exists() && persistentCacheDb.exists()) {
+                runCatching { persistentCacheDb.renameTo(oldCacheDb) }
+                    .onSuccess { migrated ->
+                        if (migrated) {
+                            android.util.Log.i("SagerNet", "Migrated cache.db back to cache storage")
+                        } else if (!oldCacheDb.exists()) {
+                            android.util.Log.w("SagerNet", "Failed to migrate cache.db back to cache storage")
                         }
-                        .onFailure {
-                            android.util.Log.w("SagerNet", "Failed to migrate cache.db to persistent storage", it)
-                        }
-                }
+                    }
+                    .onFailure {
+                        android.util.Log.w("SagerNet", "Failed to migrate cache.db back to cache storage", it)
+                    }
             }
-            // 主进程批量测速不再创建 CacheFile；清理 URL 测速的历史临时文件即可，
-            // 不能删除 no_backup/cache.db，因为其中保存着 fakeip 映射。
+            // 旧版本测速实例曾共享 no_backup/cache.db；测速实例现已不创建 CacheFile，
+            // 仅清理 URL 测速历史文件，不删除可能由 2.8.37 留下的映射库。
             runCatching {
                 noBackupFilesDir.listFiles { file -> file.name.startsWith("urltest_") }
                     ?.forEach { it.delete() }

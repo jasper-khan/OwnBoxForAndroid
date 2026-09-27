@@ -460,10 +460,15 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
 
     private fun clearAppCache() {
         try {
-            flushDnsCache()
+            flushDnsAndFakeIPCache()
             val cacheDir = SagerNet.application.cacheDir
-            // 首次启动后台服务前，旧版 cache.db 仍在此目录，需留给启动迁移。
-            clearDirFiles(cacheDir, skipFiles = setOf("neko.log", "cache.db"))
+            clearDirFiles(cacheDir, skipFiles = setOf("neko.log"))
+
+            val parentDir = cacheDir.parentFile
+            val relativeCache = File(parentDir, "cache")
+            if (relativeCache.exists() && relativeCache.isDirectory) {
+                clearDirFiles(relativeCache)
+            }
             
             Toast.makeText(requireContext(), R.string.clear_cache_success, Toast.LENGTH_SHORT).show()
             
@@ -476,18 +481,20 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
         }
     }
 
-    // 清理普通缓存时只刷新内存 DNS 缓存，保留持久化的 fakeip 映射。
-    private fun flushDnsCache() {
+    // 内核 Clash API 原生 flush：dns 清内存 DNS 缓存，fakeip 同时清内存与 cache.db 映射。
+    private fun flushDnsAndFakeIPCache() {
         if (!DataStore.serviceState.started) return
         if (!DataStore.enableClashAPI && !DataStore.allowAccess) return
         runOnIoDispatcher {
             val client = OkHttpClient()
-            runCatching {
-                val request = Request.Builder()
-                    .url("http://127.0.0.1:9091/cache/dns/flush")
-                    .post(ByteArray(0).toRequestBody())
-                    .build()
-                client.newCall(request).execute().close()
+            for (endpoint in listOf("dns", "fakeip")) {
+                runCatching {
+                    val request = Request.Builder()
+                        .url("http://127.0.0.1:9091/cache/$endpoint/flush")
+                        .post(ByteArray(0).toRequestBody())
+                        .build()
+                    client.newCall(request).execute().close()
+                }
             }
         }
     }
