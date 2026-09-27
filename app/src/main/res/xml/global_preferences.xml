@@ -325,6 +325,14 @@
             app:title="@string/domain_strategy_for_direct"
             app:useSimpleSummaryProvider="true" />
 
+        <EditTextPreference
+            app:defaultValue="119.29.29.29"
+            app:dialogMessage="@string/proxy_server_dns_message"
+            app:icon="@drawable/ic_action_dns"
+            app:key="proxyServerDns"
+            app:title="@string/proxy_server_dns"
+            app:useSimpleSummaryProvider="true" />
+
         <moe.matsuri.nb4a.ui.SimpleMenuPreference
             app:defaultValue="auto"
             app:entries="@array/dns_network_select"

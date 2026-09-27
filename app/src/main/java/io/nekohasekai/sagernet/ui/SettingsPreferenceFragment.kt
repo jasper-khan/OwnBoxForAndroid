@@ -136,6 +136,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
 
         val remoteDns = findPreference<EditTextPreference>(Key.REMOTE_DNS)!!
         val directDns = findPreference<EditTextPreference>(Key.DIRECT_DNS)!!
+        val proxyServerDns = findPreference<EditTextPreference>(Key.PROXY_SERVER_DNS)!!
         val enableDnsRouting = findPreference<SwitchPreference>(Key.ENABLE_DNS_ROUTING)!!
         val enableFakeDns = findPreference<SwitchPreference>(Key.ENABLE_FAKEDNS)!!
 
@@ -180,10 +181,12 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
         dnsHosts.setOnBindEditTextListener(EditTextPreferenceModifiers.Hosts)
         remoteDns.setOnBindEditTextListener(EditTextPreferenceModifiers.DnsServers)
         directDns.setOnBindEditTextListener(EditTextPreferenceModifiers.DnsServers)
+        proxyServerDns.setOnBindEditTextListener(EditTextPreferenceModifiers.DnsServers)
         httpProxyBypass.summaryProvider = ListSummaryProvider(maxLines = 1)
         dnsHosts.summaryProvider = ListSummaryProvider(maxLines = 1)
         remoteDns.summaryProvider = ListSummaryProvider(maxLines = 1)
         directDns.summaryProvider = ListSummaryProvider(maxLines = 1)
+        proxyServerDns.summaryProvider = ListSummaryProvider(maxLines = 1)
 
         speedTestMode.setOnPreferenceChangeListener { _, newValue ->
             SpeedTestSettings.isValidMode(newValue.toString())
@@ -335,6 +338,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat(), OnPreferenceDataS
         enableFakeDns.onPreferenceChangeListener = reloadListener
         remoteDns.onPreferenceChangeListener = reloadListener
         directDns.onPreferenceChangeListener = reloadListener
+        proxyServerDns.onPreferenceChangeListener = reloadListener
         enableDnsRouting.onPreferenceChangeListener = reloadListener
 
         ipv6Mode.onPreferenceChangeListener = reloadListener

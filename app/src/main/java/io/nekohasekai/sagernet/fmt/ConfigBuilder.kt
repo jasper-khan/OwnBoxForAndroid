@@ -465,6 +465,8 @@ fun buildConfig(
         .mapNotNull { dns -> dns.trim().takeIf { it.isNotBlank() && !it.startsWith("#") } }
     val directDNS = DataStore.directDns.split("\n")
         .mapNotNull { dns -> dns.trim().takeIf { it.isNotBlank() && !it.startsWith("#") } }
+    val proxyServerDns = DataStore.proxyServerDns.split("\n")
+        .mapNotNull { dns -> sanitizeDnsEntry(dns).takeIf { it.isNotBlank() && !it.startsWith("#") } }
     val dnsHosts by lazy { parseDnsHosts(DataStore.dnsHosts) }
     // 用户域名重写优先于内置 hosts；自定义 DNS 服务器域名也可由此走 hosts。
     val dnsResolverHosts by lazy { builtinDnsHosts + dnsHosts }
@@ -821,6 +823,8 @@ fun buildConfig(
                 mtu = DataStore.mtu
                 auto_route = true
                 strict_route = DataStore.strictRoute
+                // sing-box 1.14+ 新字段：53 端口 DNS 劫持进核心 DNS 模块（官方默认值，显式写出）
+                _hack_config_map["dns_mode"] = "hijack"
                 // sing-box 1.13 移除了入站 sniff/domain_strategy 字段，
                 // 改由路由规则动作实现（见下方 route.rules 构建处）；
                 // inet4_address/inet6_address 与 endpoint_independent_nat 已于 1.12 移除（构造函数硬报错），
@@ -1694,7 +1698,11 @@ fun buildConfig(
             tag = "local"
         })
         // 节点服务器域名专用 DNS，对应 mihomo 的 proxy-server-nameserver
-        dns.servers.add(buildDnsServer("119.29.29.29", TAG_DNS_PROXY, TAG_DIRECT))
+        addDnsServerGroup(
+            proxyServerDns, TAG_DNS_PROXY, "119.29.29.29", TAG_DIRECT,
+            "local", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("server")),
+            ::normalizeDnsAddress
+        )
 
         addDnsServerGroup(
             directDNS, "dns-direct", "https://223.5.5.5/dns-query", TAG_DIRECT,

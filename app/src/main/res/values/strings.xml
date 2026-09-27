@@ -158,6 +158,8 @@
     <string name="cag_dns">DNS Settings</string>
     <string name="remote_dns">Remote DNS</string>
     <string name="direct_dns">Direct DNS</string>
+    <string name="proxy_server_dns">Proxy Server DNS</string>
+    <string name="proxy_server_dns_message">DNS used to resolve proxy node domains. One per line. Supports https://, h3://, tls://, quic://, tcp://, udp:// and IP[:port].</string>
     <string name="dns_servers_dialog_message">One DNS server per line. Multiple servers are queried together; the first successful response is used.</string>
     <string name="enable_dns_routing">Enable DNS Routing</string>
     <string name="dns_routing_message">Resolve domains in bypass routes with Direct DNS. Be aware of

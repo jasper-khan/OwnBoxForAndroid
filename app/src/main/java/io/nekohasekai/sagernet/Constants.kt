@@ -22,6 +22,7 @@ object Key {
 
     const val REMOTE_DNS = "remoteDns"
     const val DIRECT_DNS = "directDns"
+    const val PROXY_SERVER_DNS = "proxyServerDns"
     const val ENABLE_DNS_ROUTING = "enableDnsRouting"
     const val ENABLE_FAKEDNS = "enableFakeDns"
     const val ENABLE_OBSERVABILITY = "enableObservability"
