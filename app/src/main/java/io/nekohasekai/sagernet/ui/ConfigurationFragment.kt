@@ -2051,6 +2051,35 @@ class ConfigurationFragment @JvmOverloads constructor(
 
     }
 
+    fun urlTestSingle(profile: ProxyEntity) {
+        val targetUrl = DataStore.groupUrlTestUrl(profile.groupId).takeIf { it.isNotBlank() } ?: DataStore.connectionTestURL
+        runOnDefaultDispatcher {
+            profile.status = 0
+            ProfileManager.postUpdate(profile, false)
+            try {
+                val urlTest = UrlTest(targetUrl)
+                val result = kotlinx.coroutines.withTimeoutOrNull(DataStore.connectionTestTimeout * 2 + 2500L) {
+                    urlTest.doTest(profile)
+                } ?: throw java.util.concurrent.TimeoutException("URL test timeout")
+                profile.status = 1
+                profile.ping = result
+                profile.error = null
+            } catch (e: PluginManager.PluginNotFoundException) {
+                profile.status = 2
+                profile.error = e.readableMessage
+            } catch (e: Exception) {
+                profile.status = 3
+                profile.error = e.readableMessage
+            }
+            try {
+                SagerDatabase.proxyDao.updatePingResult(profile.id, profile.status, profile.ping, profile.error)
+                ProfileManager.postUpdate(profile, false)
+            } catch (e: Exception) {
+                Logs.w(e)
+            }
+        }
+    }
+
     @OptIn(DelicateCoroutinesApi::class)
     fun urlTest() {
         if (DataStore.runningTest) return else DataStore.runningTest = true
@@ -3914,6 +3943,9 @@ class ConfigurationFragment @JvmOverloads constructor(
                     when (item.itemId) {
                         R.id.action_test_profile_speed -> {
                             (parentFragment as? ConfigurationFragment)?.speedTestSingle(entity)
+                        }
+                        R.id.action_urltest -> {
+                            (parentFragment as? ConfigurationFragment)?.urlTestSingle(entity)
                         }
                         R.id.action_edit -> {
                             val pf = parentFragment as? ConfigurationFragment
