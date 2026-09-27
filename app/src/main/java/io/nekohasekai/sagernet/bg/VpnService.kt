@@ -246,8 +246,8 @@ class VpnService : BaseVpnService(),
             }
         }
 
-        // 混合入站存在时始终向系统追加 HTTP 代理（Android 10+）
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !DataStore.mixedInboundDisabled) {
+        // 未启用应用分流且混合入站可用时，才向系统追加 HTTP 代理（Android 10+），避免破坏绕过/代理应用分流规则
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !DataStore.mixedInboundDisabled && !proxyApps) {
             builder.setHttpProxy(
                 ProxyInfo.buildDirectProxy(
                     LOCALHOST,

@@ -2759,24 +2759,32 @@ class ConfigurationFragment @JvmOverloads constructor(
             val currentGroup = SagerDatabase.groupDao.getById(proxyGroup.id) ?: proxyGroup
             proxyGroup = currentGroup
 
-            if (currentGroup.type != GroupType.SUBSCRIPTION) {
-                card.isGone = true
-                return
-            }
-
-            val sub = currentGroup.subscription
-            if (sub == null) {
-                card.isGone = true
-                return
-            }
-
             val tvTitle = root.findViewById<TextView>(R.id.tv_subscription_title)
             val tvExpire = root.findViewById<TextView>(R.id.tv_expire_date)
+            val layoutTraffic = root.findViewById<View>(R.id.layout_traffic_details)
             val tvTrafficStat = root.findViewById<TextView>(R.id.tv_traffic_stat)
             val tvTrafficRemaining = root.findViewById<TextView>(R.id.tv_traffic_remaining)
             val tvNodeCount = root.findViewById<TextView>(R.id.tv_node_count)
             val tvLastUpdated = root.findViewById<TextView>(R.id.tv_last_updated)
 
+            if (isAllGroupsTab || currentGroup.type != GroupType.SUBSCRIPTION || currentGroup.subscription == null) {
+                val groupName = if (isAllGroupsTab) {
+                    getString(R.string.group_tab_all)
+                } else {
+                    currentGroup.displayName()
+                }
+                tvTitle?.text = groupName
+                tvExpire?.isGone = true
+                layoutTraffic?.isGone = true
+                tvLastUpdated?.isGone = true
+                val count = adapter?.configurationIdList?.size ?: 0
+                tvNodeCount?.text = "节点数: $count"
+                card.isVisible = true
+                return
+            }
+
+            layoutTraffic?.isVisible = true
+            val sub = currentGroup.subscription!!
             tvTitle?.text = currentGroup.name ?: getString(R.string.subscription_info)
 
             var usedBytes = 0L
@@ -3279,6 +3287,7 @@ class ConfigurationFragment @JvmOverloads constructor(
                 configurationIdList.removeAt(pos)
                 notifyItemRemoved(pos)
                 refreshFromPosition(pos - 1)
+                updateSubscriptionInfoCard()
             }
 
             override fun undo(actions: List<Pair<Int, ProxyEntity>>) {
@@ -3288,6 +3297,7 @@ class ConfigurationFragment @JvmOverloads constructor(
                         configurationIdList.add(index, item.id)
                         notifyItemInserted(index)
                         refreshFromPosition(index - 1)
+                        updateSubscriptionInfoCard()
                     }
                 }
             }
@@ -3319,6 +3329,7 @@ class ConfigurationFragment @JvmOverloads constructor(
                     configurationIdList.add(profile.id)
                     notifyItemInserted(pos)
                     refreshFromPosition(pos - 1)
+                    updateSubscriptionInfoCard()
                 }
             }
 
@@ -3392,6 +3403,7 @@ class ConfigurationFragment @JvmOverloads constructor(
                     configurationList.remove(profileId)
                     notifyItemRemoved(index)
                     refreshFromPosition(index - 1)
+                    updateSubscriptionInfoCard()
                 }
             }
 
