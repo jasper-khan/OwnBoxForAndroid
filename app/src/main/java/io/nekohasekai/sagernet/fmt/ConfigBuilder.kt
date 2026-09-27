@@ -749,7 +749,7 @@ fun buildConfig(
             experimental = ExperimentalOptions().apply {
                 cache_file = CacheFile().apply {
                     enabled = true
-                    path = "../cache/cache.db"
+                    path = "cache.db"
                     // fakeip 的域名↔IP 映射必须落盘：内核重建（升级/重启/重连）后内存映射全丢，
                     // 系统和应用里还留着的 198.18.x.x 就还原不回域名，表现为"升级后没网"。
                     store_fakeip = true

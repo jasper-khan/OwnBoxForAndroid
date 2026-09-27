@@ -59,15 +59,28 @@ class SagerNet : Application(),
 
         if (isMainProcess || isBgProcess) {
             externalAssets.mkdirs()
-            // 官方内核在 PlatformLogWriter != nil 时会为每个 box 强制创建 CacheFile，
-            // 无显式 path 时共用工作目录（no_backup）下的 cache.db。主进程批量测速的
-            // 并发 TestInstance 曾共享该文件导致 bbolt freelist 损坏（"page already freed"
-            // panic 在异步 batch goroutine 中无法 recover → SIGABRT 闪退），且损坏文件
-            // 能正常打开、提交时才崩，官方 Open 阶段的校验发现不了。
-            // 现测试实例已从 Go 侧彻底不创建 cache（libcore NewTestSingBoxInstance），
-            // 这里在进程启动、尚无 box 打开时清扫存量损坏文件及历史残留，实现老用户自愈。
+            // 旧版本把 cache.db 放在可被系统清理的 cacheDir；迁到 no_backup 后，
+            // 保留已有目标文件，只在目标不存在时迁移旧文件，避免丢失 fakeip 映射。
+            if (isBgProcess) {
+                val oldCacheDb = File(cacheDir, "cache.db")
+                val persistentCacheDb = File(noBackupFilesDir, "cache.db")
+                if (!persistentCacheDb.exists() && oldCacheDb.exists()) {
+                    runCatching { oldCacheDb.renameTo(persistentCacheDb) }
+                        .onSuccess { migrated ->
+                            if (migrated) {
+                                android.util.Log.i("SagerNet", "Migrated cache.db to persistent storage")
+                            } else {
+                                android.util.Log.w("SagerNet", "Failed to migrate cache.db to persistent storage")
+                            }
+                        }
+                        .onFailure {
+                            android.util.Log.w("SagerNet", "Failed to migrate cache.db to persistent storage", it)
+                        }
+                }
+            }
+            // 主进程批量测速不再创建 CacheFile；清理 URL 测速的历史临时文件即可，
+            // 不能删除 no_backup/cache.db，因为其中保存着 fakeip 映射。
             runCatching {
-                File(noBackupFilesDir, "cache.db").delete()
                 noBackupFilesDir.listFiles { file -> file.name.startsWith("urltest_") }
                     ?.forEach { it.delete() }
             }
