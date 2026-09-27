@@ -406,6 +406,8 @@ public class SingBoxOptions {
 
         public Boolean store_fakeip;
 
+        public String flush_interval;
+
         public String path;
 
         public String cache_id;

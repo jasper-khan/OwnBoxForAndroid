@@ -749,10 +749,12 @@ fun buildConfig(
             experimental = ExperimentalOptions().apply {
                 cache_file = CacheFile().apply {
                     enabled = true
-                    path = "../cache/cache.db"
+                    path = "cache.db"
                     // fakeip 的域名↔IP 映射必须落盘：内核重建（升级/重启/重连）后内存映射全丢，
                     // 系统和应用里还留着的 198.18.x.x 就还原不回域名，表现为"升级后没网"。
                     store_fakeip = true
+                    // 新映射先进入内核内存队列；定时落盘，避免长期运行后被系统杀进程时整批丢失。
+                    flush_interval = "1s"
                 }
 
                 if (DataStore.enableClashAPI || DataStore.allowAccess) {
@@ -1854,7 +1856,9 @@ fun buildConfig(
             if (dnsHosts.isNotEmpty()) {
                 dns.rules.add(0, DNSRule_DefaultOptions().apply {
                     server = TAG_DNS_HOSTS
-                    _hack_config_map["ip_accept_any"] = true
+                    // Hosts 按域名精确匹配，不使用需要 match_response 的响应过滤字段。
+                    domain = dnsHosts.keys.map { it.lowercase().removeSuffix(".") }
+                    query_type = listOf("A", "AAAA")
                 })
             }
             // force bypass (always top DNS rule)

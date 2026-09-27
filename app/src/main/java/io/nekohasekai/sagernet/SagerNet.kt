@@ -59,22 +59,23 @@ class SagerNet : Application(),
 
         if (isMainProcess || isBgProcess) {
             externalAssets.mkdirs()
-            // 2.8.37 将 cache.db 移到了 no_backup。回退到 cacheDir 前先迁回，
-            // 避免升级安装后丢掉已有的 FakeIP 映射。
-            val oldCacheDb = File(cacheDir, "cache.db")
-            val persistentCacheDb = File(noBackupFilesDir, "cache.db")
-            if (!oldCacheDb.exists() && persistentCacheDb.exists()) {
-                runCatching { persistentCacheDb.renameTo(oldCacheDb) }
-                    .onSuccess { migrated ->
-                        if (migrated) {
-                            android.util.Log.i("SagerNet", "Migrated cache.db back to cache storage")
-                        } else if (!oldCacheDb.exists()) {
-                            android.util.Log.w("SagerNet", "Failed to migrate cache.db back to cache storage")
+            // 仅后台进程在内核打开数据库前迁移，保留升级前的 FakeIP 映射。
+            if (isBgProcess) {
+                val oldCacheDb = File(cacheDir, "cache.db")
+                val persistentCacheDb = File(noBackupFilesDir, "cache.db")
+                if (!persistentCacheDb.exists() && oldCacheDb.exists()) {
+                    runCatching { oldCacheDb.renameTo(persistentCacheDb) }
+                        .onSuccess { migrated ->
+                            if (migrated) {
+                                android.util.Log.i("SagerNet", "Migrated cache.db to persistent storage")
+                            } else {
+                                android.util.Log.w("SagerNet", "Failed to migrate cache.db to persistent storage")
+                            }
                         }
-                    }
-                    .onFailure {
-                        android.util.Log.w("SagerNet", "Failed to migrate cache.db back to cache storage", it)
-                    }
+                        .onFailure {
+                            android.util.Log.w("SagerNet", "Failed to migrate cache.db to persistent storage", it)
+                        }
+                }
             }
             // 旧版本测速实例曾共享 no_backup/cache.db；测速实例现已不创建 CacheFile，
             // 仅清理 URL 测速历史文件，不删除可能由 2.8.37 留下的映射库。

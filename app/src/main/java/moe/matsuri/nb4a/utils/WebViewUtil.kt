@@ -14,9 +14,15 @@ object WebViewUtil {
         view: WebView?, request: WebResourceRequest?, error: WebResourceError?
     ) {
         if (Build.VERSION.SDK_INT >= 23 && error != null) {
-            Logs.e("WebView error description: ${error.description}")
+            val uri = request?.url
+            // Do not log credentials, query strings or private paths on remote panels.
+            val url = uri?.let {
+                val path = if (it.host == "127.0.0.1" || it.host == "localhost") it.encodedPath.orEmpty() else ""
+                "${it.scheme}://${it.host}${if (it.port >= 0) ":${it.port}" else ""}$path"
+            }
+            Logs.e("WebView request failed: url=$url method=${request?.method} " +
+                "mainFrame=${request?.isForMainFrame} code=${error.errorCode} description=${error.description}")
         }
-        Logs.e("WebView error: ${error.toString()}")
     }
 
     fun interceptRequest(
