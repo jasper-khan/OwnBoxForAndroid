@@ -23,6 +23,7 @@ import (
 	M "github.com/sagernet/sing/common/metadata"
 	N "github.com/sagernet/sing/common/network"
 	"github.com/sagernet/sing/service"
+	"golang.org/x/net/publicsuffix"
 )
 
 const TypeLoadBalance = "loadbalance"
@@ -221,34 +222,17 @@ func (s *LoadBalance) Start() error {
 
 func extractRootDomain(fqdn string) string {
 	s := strings.TrimSpace(strings.ToLower(fqdn))
-	s = strings.TrimSuffix(s, ".")
-	if s == "" {
-		return ""
-	}
 	if host, _, err := net.SplitHostPort(s); err == nil {
 		s = host
-	} else if idx := strings.IndexByte(s, ':'); idx != -1 {
-		s = s[:idx]
 	}
-
-	parts := strings.Split(s, ".")
-	n := len(parts)
-	if n <= 2 {
+	s = strings.TrimSuffix(s, ".")
+	if s == "" || net.ParseIP(s) != nil {
 		return s
 	}
-
-	tld := parts[n-1]
-	sld := parts[n-2]
-	if len(tld) == 2 {
-		switch sld {
-		case "com", "net", "org", "edu", "gov", "co", "ne", "ac", "go", "gen", "firm", "ind", "re", "mil":
-			if n >= 3 {
-				return parts[n-3] + "." + sld + "." + tld
-			}
-		}
+	if root, err := publicsuffix.EffectiveTLDPlusOne(s); err == nil {
+		return root
 	}
-
-	return parts[n-2] + "." + parts[n-1]
+	return s
 }
 
 func hashDestination(ctx context.Context, dest M.Socksaddr) uint32 {
@@ -505,7 +489,7 @@ func (s *LoadBalance) DialContext(ctx context.Context, network string, destinati
 			if idx < len(s.stats) && s.stats[idx] != nil {
 				s.stats[idx].recordSuccess(elapsed)
 			}
-			if s.strategy == "leastLoad" {
+			if s.strategy == "leastLoad" || s.strategy == "least_load" {
 				s.activeConns[idx].Add(1)
 				conn = &trackedConn{
 					Conn: conn,
@@ -569,7 +553,7 @@ func (s *LoadBalance) ListenPacket(ctx context.Context, destination M.Socksaddr)
 			if idx < len(s.stats) && s.stats[idx] != nil {
 				s.stats[idx].recordSuccess(elapsed)
 			}
-			if s.strategy == "leastLoad" {
+			if s.strategy == "leastLoad" || s.strategy == "least_load" {
 				s.activeConns[idx].Add(1)
 				conn = &trackedPacketConn{
 					PacketConn: conn,
@@ -604,4 +588,3 @@ func (s *LoadBalance) Close() error {
 	}
 	return nil
 }
-

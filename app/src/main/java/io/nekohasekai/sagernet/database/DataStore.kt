@@ -89,7 +89,11 @@ object DataStore : OnPreferenceDataStoreChangeListener {
         val current = currentGroup()
         if (current.type == GroupType.BASIC) return current.id
         val groups = SagerDatabase.groupDao.allGroups()
-        return groups.find { it.type == GroupType.BASIC }!!.id
+        return groups.find { it.type == GroupType.BASIC }?.id
+            // 用户可以删除“未分组”；只剩订阅分组时，按需恢复普通导入目标。
+            ?: SagerDatabase.groupDao.createGroup(
+                ProxyGroup(ungrouped = true, userOrder = SagerDatabase.groupDao.nextOrder() ?: 1)
+            )
     }
 
     var appTLSVersion by configurationStore.string(Key.APP_TLS_VERSION)

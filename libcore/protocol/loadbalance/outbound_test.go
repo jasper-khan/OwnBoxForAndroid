@@ -1,13 +1,103 @@
 package loadbalance
 
 import (
+	"context"
+	"net"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing-box/common/interrupt"
 	M "github.com/sagernet/sing/common/metadata"
 )
+
+func TestRootDomain(t *testing.T) {
+	for _, test := range []struct{ input, want string }{
+		{"api.example.com", "example.com"},
+		{" WWW.Example.CO.UK.:443 ", "example.co.uk"},
+		{"alice.github.io", "alice.github.io"},
+		{"api.alice.github.io", "alice.github.io"},
+		{"bob.github.io", "bob.github.io"},
+		{"localhost", "localhost"},
+		{"192.0.2.1", "192.0.2.1"},
+		{"[2001:db8::1]:443", "2001:db8::1"},
+		{"", ""},
+	} {
+		t.Run(test.input, func(t *testing.T) {
+			if got := extractRootDomain(test.input); got != test.want {
+				t.Fatalf("got %q, want %q", got, test.want)
+			}
+		})
+	}
+	ctx := context.Background()
+	alice := hashDestination(ctx, M.Socksaddr{Fqdn: "alice.github.io"})
+	if alice == hashDestination(ctx, M.Socksaddr{Fqdn: "bob.github.io"}) {
+		t.Fatal("independent hosted sites must not share the same hash key")
+	}
+	metadataCtx := adapter.WithContext(ctx, &adapter.InboundContext{Domain: "api.alice.github.io"})
+	if alice != hashDestination(metadataCtx, M.Socksaddr{}) {
+		t.Fatal("sniffed domain should retain the same site's affinity")
+	}
+}
+
+type countingTestOutbound struct {
+	adapter.Outbound
+	t *testing.T
+}
+
+func (o countingTestOutbound) DialContext(context.Context, string, M.Socksaddr) (net.Conn, error) {
+	client, server := net.Pipe()
+	o.t.Cleanup(func() { client.Close(); server.Close() })
+	return client, nil
+}
+
+type countingTestPacketConn struct{ net.PacketConn }
+
+func (countingTestPacketConn) Close() error { return nil }
+
+func (o countingTestOutbound) ListenPacket(context.Context, M.Socksaddr) (net.PacketConn, error) {
+	return countingTestPacketConn{}, nil
+}
+
+func TestLeastLoadConnectionCounts(t *testing.T) {
+	for _, strategy := range []string{"leastLoad", "least_load"} {
+		for _, network := range []string{"tcp", "udp"} {
+			t.Run(strategy+"/"+network, func(t *testing.T) {
+				lb := &LoadBalance{
+					strategy:       strategy,
+					outbounds:      []adapter.Outbound{countingTestOutbound{t: t}},
+					stats:          []*nodeStats{new(nodeStats)},
+					activeConns:    []*atomic.Int64{new(atomic.Int64)},
+					interruptGroup: interrupt.NewGroup(),
+				}
+				var closeConn func() error
+				if network == "tcp" {
+					conn, err := lb.DialContext(context.Background(), network, M.Socksaddr{})
+					if err != nil {
+						t.Fatal(err)
+					}
+					closeConn = conn.Close
+				} else {
+					conn, err := lb.ListenPacket(context.Background(), M.Socksaddr{})
+					if err != nil {
+						t.Fatal(err)
+					}
+					closeConn = conn.Close
+				}
+				t.Cleanup(func() { closeConn() })
+				if got := lb.activeConns[0].Load(); got != 1 {
+					t.Fatalf("active count after open = %d, want 1", got)
+				}
+				closeConn()
+				closeConn()
+				if got := lb.activeConns[0].Load(); got != 0 {
+					t.Fatalf("active count after repeated close = %d, want 0", got)
+				}
+			})
+		}
+	}
+}
 
 func TestStrategies(t *testing.T) {
 	n := 3
@@ -22,7 +112,7 @@ func TestStrategies(t *testing.T) {
 	lb.outbounds = make([]adapter.Outbound, n)
 
 	// Test 1: failover under normal conditions
-	indices := lb.candidateIndices(M.Socksaddr{})
+	indices := lb.candidateIndices(context.Background(), M.Socksaddr{})
 	if len(indices) != 3 || indices[0] != 0 || indices[1] != 1 || indices[2] != 2 {
 		t.Fatalf("expected [0, 1, 2], got %v", indices)
 	}
@@ -30,14 +120,14 @@ func TestStrategies(t *testing.T) {
 	// Test 2: failover when node 0 degrades (2 consecutive fails recently)
 	lb.stats[0].consecutiveFails.Store(2)
 	lb.stats[0].lastFailTime.Store(time.Now().UnixMilli())
-	indices = lb.candidateIndices(M.Socksaddr{})
+	indices = lb.candidateIndices(context.Background(), M.Socksaddr{})
 	if len(indices) != 3 || indices[0] != 1 || indices[1] != 2 || indices[2] != 0 {
 		t.Fatalf("expected [1, 2, 0] after node 0 fails, got %v", indices)
 	}
 
 	// Test 3: failover recovery after cooldown
 	lb.stats[0].lastFailTime.Store(time.Now().Add(-35 * time.Second).UnixMilli())
-	indices = lb.candidateIndices(M.Socksaddr{})
+	indices = lb.candidateIndices(context.Background(), M.Socksaddr{})
 	if len(indices) != 3 || indices[0] != 0 {
 		t.Fatalf("expected node 0 to recover after cooldown, got %v", indices)
 	}
@@ -61,7 +151,7 @@ func TestStrategies(t *testing.T) {
 	lb.stats[2].successDials.Store(45)
 	lb.stats[2].latencyEmaMs.Store(80)
 
-	indices = lb.candidateIndices(M.Socksaddr{})
+	indices = lb.candidateIndices(context.Background(), M.Socksaddr{})
 	if len(indices) != 3 || indices[0] != 1 {
 		t.Fatalf("expected node 1 to be highest score, got %v", indices)
 	}
@@ -72,8 +162,8 @@ func TestStrategies(t *testing.T) {
 	// Test 5: round_robin strategy
 	lb.strategy = "round_robin"
 	lb.counter = 0
-	i1 := lb.candidateIndices(M.Socksaddr{})
-	i2 := lb.candidateIndices(M.Socksaddr{})
+	i1 := lb.candidateIndices(context.Background(), M.Socksaddr{})
+	i2 := lb.candidateIndices(context.Background(), M.Socksaddr{})
 	if i1[0] == i2[0] {
 		t.Fatalf("expected round robin rotation, got i1=%v, i2=%v", i1, i2)
 	}
@@ -95,7 +185,7 @@ func TestStrategies(t *testing.T) {
 	lb.activeConns[2].Store(5)
 	lb.stats[2].consecutiveFails.Store(0)
 
-	llIndices := lb.candidateIndices(M.Socksaddr{})
+	llIndices := lb.candidateIndices(context.Background(), M.Socksaddr{})
 	if llIndices[0] != 1 {
 		t.Fatalf("expected healthy node 1 with 2 conns to be chosen before degraded node 0 with 0 conns, got %v", llIndices)
 	}
@@ -103,13 +193,13 @@ func TestStrategies(t *testing.T) {
 		t.Fatalf("expected degraded node 0 to be placed last, got %v", llIndices)
 	}
 
-	// Test 7: destination stickiness
+	// Test 7: round robin must rotate even for the same destination
 	lb.strategy = "round_robin"
 	destA := M.Socksaddr{Fqdn: "video.youtube.com"}
-	destA1 := lb.candidateIndices(destA)
-	destA2 := lb.candidateIndices(destA)
-	if destA1[0] != destA2[0] {
-		t.Fatalf("expected consistent destination stickiness for same FQDN, got %v and %v", destA1, destA2)
+	destA1 := lb.candidateIndices(context.Background(), destA)
+	destA2 := lb.candidateIndices(context.Background(), destA)
+	if destA1[0] == destA2[0] {
+		t.Fatalf("expected round robin rotation for same FQDN, got %v and %v", destA1, destA2)
 	}
 }
 
@@ -128,8 +218,8 @@ func TestConsistentHashRing(t *testing.T) {
 
 	// 1. Determinism: Same destination maps to same primary candidate every time
 	dest1 := M.Socksaddr{Fqdn: "api.telegram.org"}
-	c1 := lb.candidateIndices(dest1)
-	c2 := lb.candidateIndices(dest1)
+	c1 := lb.candidateIndices(context.Background(), dest1)
+	c2 := lb.candidateIndices(context.Background(), dest1)
 	if len(c1) != n || len(c2) != n {
 		t.Fatalf("expected length %d, got c1=%d, c2=%d", n, len(c1), len(c2))
 	}
@@ -155,7 +245,7 @@ func TestConsistentHashRing(t *testing.T) {
 	lb.stats[primaryIdx].consecutiveFails.Store(2)
 	lb.stats[primaryIdx].lastFailTime.Store(time.Now().UnixMilli())
 
-	cAfterFail := lb.candidateIndices(dest1)
+	cAfterFail := lb.candidateIndices(context.Background(), dest1)
 	// The primary node should now be degraded and put at the very end
 	if cAfterFail[0] == primaryIdx {
 		t.Fatalf("degraded node %d should not be primary candidate, got %v", primaryIdx, cAfterFail)
@@ -173,7 +263,7 @@ func TestConsistentHashRing(t *testing.T) {
 	var otherDest M.Socksaddr
 	var otherC1 []int
 	for _, fqdn := range []string{"google.com", "cloudflare.com", "apple.com", "netflix.com", "github.com", "microsoft.com"} {
-		cand := lb.candidateIndices(M.Socksaddr{Fqdn: fqdn})
+		cand := lb.candidateIndices(context.Background(), M.Socksaddr{Fqdn: fqdn})
 		if cand[0] != primaryIdx && cand[0] != expectedNewPrimary {
 			otherDest = M.Socksaddr{Fqdn: fqdn}
 			otherC1 = cand
@@ -181,7 +271,7 @@ func TestConsistentHashRing(t *testing.T) {
 		}
 	}
 	if otherDest.Fqdn != "" {
-		otherCAfter := lb.candidateIndices(otherDest)
+		otherCAfter := lb.candidateIndices(context.Background(), otherDest)
 		if otherCAfter[0] != otherC1[0] {
 			t.Fatalf("unaffected destination %s remapped unexpectedly from %d to %d (consistent hash property violated)",
 				otherDest.Fqdn, otherC1[0], otherCAfter[0])
@@ -190,14 +280,14 @@ func TestConsistentHashRing(t *testing.T) {
 
 	// 5. Recovery after cooldown:
 	lb.stats[primaryIdx].lastFailTime.Store(time.Now().Add(-35 * time.Second).UnixMilli())
-	cRecovered := lb.candidateIndices(dest1)
+	cRecovered := lb.candidateIndices(context.Background(), dest1)
 	if cRecovered[0] != primaryIdx {
 		t.Fatalf("expected node %d to reclaim primary slot after cooldown, got %v", primaryIdx, cRecovered)
 	}
 
 	// 6. Test compatibility with "consistent_hash" alias
 	lb.strategy = "consistent_hash"
-	cAlias := lb.candidateIndices(dest1)
+	cAlias := lb.candidateIndices(context.Background(), dest1)
 	if cAlias[0] != primaryIdx {
 		t.Fatalf("expected 'consistent_hash' alias to produce same primary node %d, got %v", primaryIdx, cAlias)
 	}
@@ -215,7 +305,7 @@ func TestConsistentHashRing(t *testing.T) {
 	for i := 0; i < n; i++ {
 		lbReordered.stats[i] = new(nodeStats)
 	}
-	reorderedCandidates := lbReordered.candidateIndices(dest1)
+	reorderedCandidates := lbReordered.candidateIndices(context.Background(), dest1)
 	originalChosenTag := tags[c1[0]]
 	reorderedChosenTag := reorderedTags[reorderedCandidates[0]]
 	if originalChosenTag != reorderedChosenTag {
