@@ -787,7 +787,7 @@ fun buildConfig(
             independent_cache = true
         }
 
-        fun autoDnsDomainStrategy(s: String): String? {
+        fun autoDnsDomainStrategy(s: String, isProxied: Boolean = false): String? {
             if (ipv6Mode == IPv6Mode.DISABLE) {
                 return "ipv4_only"
             }
@@ -800,7 +800,7 @@ fun buildConfig(
             return when (ipv6Mode) {
                 IPv6Mode.DISABLE -> "ipv4_only"
                 IPv6Mode.ENABLE -> "prefer_ipv4"
-                IPv6Mode.PREFER -> "prefer_ipv6"
+                IPv6Mode.PREFER -> if (isProxied) "prefer_ipv4" else "prefer_ipv6"
                 IPv6Mode.ONLY -> "ipv6_only"
                 else -> null
             }
@@ -1625,6 +1625,7 @@ fun buildConfig(
 
         val directDomainStrategy = when (ipv6Mode) {
             IPv6Mode.DISABLE -> "ipv4_only"
+            IPv6Mode.PREFER -> "prefer_ipv6"
             IPv6Mode.ONLY -> "ipv6_only"
             else -> null
         }
@@ -1710,7 +1711,7 @@ fun buildConfig(
         )
         addDnsServerGroup(
             remoteDns, "dns-remote", "https://dns.google/dns-query", mainProxyTag,
-            "dns-direct", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-remote")),
+            "dns-direct", autoDnsDomainStrategy(SingBoxOptionsUtil.domainStrategy("dns-remote"), isProxied = true),
             ::normalizeRemoteDnsAddress
         )
         if (dnsHosts.isNotEmpty()) {
@@ -1726,6 +1727,8 @@ fun buildConfig(
             dns.strategy = "ipv4_only"
         } else if (ipv6Mode == IPv6Mode.ONLY) {
             dns.strategy = "ipv6_only"
+        } else if (ipv6Mode == IPv6Mode.PREFER) {
+            dns.strategy = "prefer_ipv6"
         }
 
         // dns object user rules
