@@ -1767,16 +1767,16 @@ fun buildConfig(
             // 1. sing-box 1.13：sniff（须位于规则最前）
             if (needSniff) {
                 topRouteRules.add(Rule_DefaultOptions().apply {
-                    port = listOf(80, 443, 3478, 5228, 8443)
+                    port = listOf(80, 443, 5228, 8443)
                     action = "sniff"
-                    sniffer = listOf("http", "tls", "quic", "stun", "dns")
+                    sniffer = listOf("http", "tls", "quic")
                     timeout = "300ms"
                 })
             }
 
-            // 2. hijack-dns 拦截入站 DNS 流量进入内置 DNS 引擎
+            // 2. hijack-dns 拦截 53 端口 DNS 流量进入内置 DNS 引擎（按端口，不依赖 dns 协议嗅探）
             topRouteRules.add(Rule_DefaultOptions().apply {
-                protocol = listOf("dns")
+                port = listOf(53)
                 action = "hijack-dns"
             })
 
